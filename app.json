@@ -4,6 +4,11 @@
     "slug": "MasterEmojiProjectRebuild",
     "version": "1.0.0",
     "orientation": "portrait",
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
@@ -23,8 +28,10 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    }
+    "plugins": [
+      "expo-audio",
+      "expo-font",
+      "expo-asset"
+    ]
   }
 }

@@ -1,0 +1,129 @@
+import React from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { FRESH_PROFILE_COLORS } from '../../profile/useFreshProfiles';
+import type { FreshProfile } from '../../profile/types';
+import { profileButtonStyles as btn } from './profileButtonStyles';
+import { profileCardStyles as card } from './profileCardStyles';
+import { profileFormStyles as form } from './profileFormStyles';
+
+type Props = {
+  profiles: FreshProfile[];
+  activeProfileId: string | null;
+  secondaryProfileId: string | null;
+  onSetActiveProfile: (profileId: string) => void;
+  onSetSecondaryProfile: (profileId: string | null) => void;
+  onDeleteProfile: (profileId: string) => void;
+};
+
+export function ProfileListCard({
+  profiles,
+  activeProfileId,
+  secondaryProfileId,
+  onSetActiveProfile,
+  onSetSecondaryProfile,
+  onDeleteProfile,
+}: Props) {
+  if (profiles.length === 0) {
+    return (
+      <View style={card.card}>
+        <Text style={card.cardEyebrow}>MANAGE PROFILES</Text>
+        <Text style={form.emptyText}>No profiles yet — create one above.</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={card.card}>
+      <Text style={card.cardEyebrow}>MANAGE PROFILES</Text>
+      <View style={card.profileList}>
+        {profiles.map((profile) => {
+          const isActive    = profile.id === activeProfileId;
+          const isSecondary = profile.id === secondaryProfileId;
+          const colors      = FRESH_PROFILE_COLORS[profile.color];
+
+          return (
+            <View key={profile.id} style={card.profileRow}>
+              {/* Avatar */}
+              <View style={[card.avatarBadgeSmall, { backgroundColor: colors.bg, borderColor: colors.swatch }]}>
+                <Text style={form.avatarOptionText}>{profile.avatar}</Text>
+              </View>
+
+              {/* Name + badges */}
+              <View style={card.profileRowCopy}>
+                <Text style={card.profileRowName}>{profile.name}</Text>
+                <View style={ss.badgeRow}>
+                  {isActive    && <Text style={ss.badgeActive}>ACTIVE</Text>}
+                  {isSecondary && <Text style={ss.badgeSecondary}>P2</Text>}
+                </View>
+              </View>
+
+              {/* Actions */}
+              <View style={ss.actionRow}>
+                <Pressable
+                  onPress={() => onSetActiveProfile(profile.id)}
+                  style={({ pressed }) => [btn.smallButton, isActive && btn.smallButtonActive, pressed && btn.pressed]}
+                >
+                  <Text style={[btn.smallButtonText, isActive && btn.smallButtonTextActive]}>
+                    Active
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  onPress={() => onSetSecondaryProfile(isSecondary ? null : profile.id)}
+                  style={({ pressed }) => [btn.smallButton, isSecondary && btn.smallButtonSecondary, pressed && btn.pressed]}
+                >
+                  <Text style={[btn.smallButtonText, isSecondary && ss.whiteText]}>P2</Text>
+                </Pressable>
+
+                <Pressable
+                  onPress={() => onDeleteProfile(profile.id)}
+                  style={({ pressed }) => [btn.deleteButton, pressed && btn.pressed]}
+                >
+                  <Text style={btn.deleteButtonText}>✕</Text>
+                </Pressable>
+              </View>
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+const ss = StyleSheet.create({
+  badgeRow: {
+    flexDirection: 'row',
+    gap: 5,
+    marginTop: 2,
+  },
+  badgeActive: {
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 0.8,
+    color: '#92400e',
+    backgroundColor: '#fde68a',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
+  badgeSecondary: {
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 0.8,
+    color: '#fff',
+    backgroundColor: '#2563eb',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
+  actionRow: {
+    flexDirection: 'row',
+    gap: 6,
+    alignItems: 'center',
+  },
+  whiteText: {
+    color: '#fff',
+  },
+});

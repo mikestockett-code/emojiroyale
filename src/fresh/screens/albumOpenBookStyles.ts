@@ -1,0 +1,116 @@
+import { StyleSheet } from 'react-native';
+
+export const openBookStyles = StyleSheet.create({
+  openBookRoot: {
+    flex: 1,
+  },
+  closeBookButton: {
+    position: 'absolute',
+    left: 22,
+    top: 34,
+    zIndex: 4,
+    width: 38,
+    height: 38,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(15,8,28,0.7)',
+    borderRadius: 19,
+    borderWidth: 1,
+    borderColor: 'rgba(255,227,163,0.24)',
+  },
+  pressedBook: {
+    opacity: 0.78,
+  },
+  pageSpread: {
+    position: 'absolute',
+    left: '50%',
+    top: 126,
+    width: 283,
+    height: 425,
+    marginLeft: -142,
+    overflow: 'hidden',
+  },
+  pageSpreadFlip: {
+    position: 'absolute',
+    left: '50%',
+    top: 126,
+    width: 283,
+    height: 425,
+    marginLeft: -142,
+    overflow: 'hidden',
+  },
+  openBookImage: {
+    width: 283,
+    height: 425,
+  },
+  openBookImageAsset: {
+    width: 283,
+    height: 425,
+  },
+  pageControls: {
+    position: 'absolute',
+    left: 88,
+    right: 88,
+    top: 506,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  pageButton: {
+    width: 38,
+    height: 38,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(15,8,28,0.7)',
+    borderRadius: 19,
+    borderWidth: 1,
+    borderColor: 'rgba(255,227,163,0.24)',
+  },
+  disabledButton: {
+    opacity: 0.3,
+  },
+  pageCount: {
+    minWidth: 54,
+    color: '#ffe3a3',
+    fontSize: 13,
+    fontWeight: '900',
+    textAlign: 'center',
+  },
+  pageControlsWithTabs: {
+    top: 598,
+  },
+  chapterTabRow: {
+    position: 'absolute',
+    left: 40,
+    right: 40,
+    top: 558,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  chapterTab: {
+    paddingHorizontal: 16,
+    paddingVertical: 7,
+    borderRadius: 14,
+    backgroundColor: 'rgba(15,8,28,0.65)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,227,163,0.22)',
+  },
+  chapterTabActive: {
+    backgroundColor: 'rgba(255,227,163,0.15)',
+    borderColor: '#ffe3a3',
+  },
+  chapterTabDisabled: {
+    opacity: 0.28,
+  },
+  chapterTabText: {
+    color: 'rgba(255,227,163,0.6)',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  chapterTabTextActive: {
+    color: '#ffe3a3',
+  },
+});

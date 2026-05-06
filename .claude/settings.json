@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -n *)",
+      "Bash(grep -rn *)",
+      "Bash(grep -r *)",
+      "Bash(grep -i *)",
+      "Bash(grep -E *)",
+      "Bash(find /Users/family/Desktop/MasterEmojiProjectRebuild/src *)",
+      "Bash(find /Users/family/Desktop/MasterEmojiProjectRebuild/node_modules *)",
+      "Bash(find /Users/family/Desktop/MasterEmojiProjectRebuild/assets *)",
+      "Bash(npx tsc *)",
+      "Bash(ls /Users/family/Desktop/MasterEmojiProjectRebuild/*)"
+    ]
+  }
+}

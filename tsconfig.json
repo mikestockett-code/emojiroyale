@@ -1,6 +1,12 @@
 {
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    "strict": true
-  }
+    "strict": true,
+    "jsx": "react-native"
+  },
+  "exclude": [
+    "src/fresh/album/albumindex.tsx",
+    "src/fresh/album/book.tsx",
+    "src/fresh/album/coverid.tsx"
+  ]
 }
