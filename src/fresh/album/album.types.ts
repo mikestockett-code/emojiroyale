@@ -7,7 +7,8 @@ export type AlbumBookId =
   | 'favorite'
   | AlbumEraId
   | 'doodle'
-  | 'easterEggs';
+  | 'easterEggs'
+  | 'battleMode';
 
 export type AlbumChapterId = 'common' | 'epic' | 'legendary';
 
@@ -42,6 +43,12 @@ export type AlbumPageSpread = {
   sectionId?: AlbumBookSectionId;
   chapterId?: AlbumChapterId;
   chapterTitle?: string;
+  leftPageSource?: ImageSourcePropType;
+  rightPageSource?: ImageSourcePropType;
+  leftLocked?: boolean;
+  rightLocked?: boolean;
+  leftRevealPuzzleId?: AlbumPuzzleId;
+  rightRevealPuzzleId?: AlbumPuzzleId;
   leftSlots: AlbumStickerSlot[];
   rightSlots: AlbumStickerSlot[];
   leftPuzzleId?: AlbumPuzzleId;
@@ -101,7 +108,7 @@ export type AlbumStickerCustomization = {
   backstory?: string;
 };
 
-export type AlbumPuzzleId = 'hiddenSon' | 'goldenPhoenix' | 'fireDragon';
+export type AlbumPuzzleId = 'hiddenSon' | 'goldenPhoenix' | 'fireDragon' | 'battleTodd';
 
 export type AlbumPuzzlePieceDefinition = {
   id: string;

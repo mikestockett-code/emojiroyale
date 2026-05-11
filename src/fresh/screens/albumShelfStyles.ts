@@ -39,6 +39,10 @@ export const shelfStyles = StyleSheet.create({
     width: 46.708,
     height: 70.063,
   },
+  battleModeBookCover: {
+    width: 52,
+    height: 70.063,
+  },
   closedBookPreview: {
     position: 'absolute',
     left: 42,
@@ -83,8 +87,16 @@ export const shelfStyles = StyleSheet.create({
     left: 77.963,
     top: 413.464,
   },
+  shelfBattleMode: {
+    left: 253.125,
+    top: 413.547,
+  },
   shelfEasterEggs: {
     left: 161.438,
     top: 413.547,
+  },
+  shelfGoldenPhoenixTrophy: {
+    left: 252,
+    top: 492,
   },
 });

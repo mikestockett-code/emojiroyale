@@ -24,14 +24,18 @@ export function useAudio(isMuted: boolean) {
   const fourSquarePlayer = useAudioPlayer(AUDIO_SOURCES.fourSquare);
   const eraserPlayer = useAudioPlayer(AUDIO_SOURCES.eraser);
   const iceFreezePlayer = useAudioPlayer(AUDIO_SOURCES.iceFreeze);
+  const jackpotPlayer = useAudioPlayer(AUDIO_SOURCES.jackpot);
+  const rumblePlayer = useAudioPlayer(AUDIO_SOURCES.rumble);
 
   useEffect(() => {
     [placePlayer, winPlayer, epicWinPlayer, legendaryWinPlayer, losePlayer,
      timerPlayer, buttonPlayer, upgradePlayer, pageTurnPlayer, tornadoPlayer,
-     clearRowPlayer, fourSquarePlayer, eraserPlayer, iceFreezePlayer].forEach(p => { p.muted = isMuted; });
+     clearRowPlayer, fourSquarePlayer, eraserPlayer, iceFreezePlayer, jackpotPlayer,
+     rumblePlayer].forEach(p => { p.muted = isMuted; });
   }, [isMuted, placePlayer, winPlayer, epicWinPlayer, legendaryWinPlayer,
       losePlayer, timerPlayer, buttonPlayer, upgradePlayer, pageTurnPlayer,
-      tornadoPlayer, clearRowPlayer, fourSquarePlayer, eraserPlayer, iceFreezePlayer]);
+      tornadoPlayer, clearRowPlayer, fourSquarePlayer, eraserPlayer, iceFreezePlayer, jackpotPlayer,
+      rumblePlayer]);
 
   const MUSIC_VOL = 0.072;
 
@@ -63,12 +67,15 @@ export function useAudio(isMuted: boolean) {
       fourSquare: fourSquarePlayer,
       eraser: eraserPlayer,
       iceFreeze: iceFreezePlayer,
+      jackpot: jackpotPlayer,
+      rumble: rumblePlayer,
     };
     const player = lookup[key];
     if (player) void replaySound(player, isMuted);
   }, [isMuted, placePlayer, winPlayer, epicWinPlayer, legendaryWinPlayer,
       losePlayer, timerPlayer, buttonPlayer, upgradePlayer, pageTurnPlayer,
-      tornadoPlayer, clearRowPlayer, fourSquarePlayer, eraserPlayer, iceFreezePlayer]);
+      tornadoPlayer, clearRowPlayer, fourSquarePlayer, eraserPlayer, iceFreezePlayer, jackpotPlayer,
+      rumblePlayer]);
 
   const stopResultAudio = useCallback(() => {
     stopAndResetPlayers([winPlayer, epicWinPlayer, legendaryWinPlayer, losePlayer, timerPlayer]);

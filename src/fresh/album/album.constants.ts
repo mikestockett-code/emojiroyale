@@ -21,6 +21,7 @@ export const ALBUM_PAPER = {
   doodleOpen: require('../../../assets/albumgeneralstuff/albumbooks/open_books_and_paper/doodle_open.png'),
   easterEggOpen: require('../../../assets/albumgeneralstuff/albumbooks/open_books_and_paper/easter_egg_open.png'),
   favoriteOpen: require('../../../assets/albumgeneralstuff/albumbooks/open_books_and_paper/favorite_open.png'),
+  battleModeOpen: require('../../../assets/albumgeneralstuff/albumbooks/open_books_and_paper/open_battle_mode_book_temp.png'),
 } as const;
 
 export const ALBUM_BOOKS: AlbumBookConfig[] = [
@@ -102,6 +103,15 @@ export const ALBUM_BOOKS: AlbumBookConfig[] = [
     pageRight: require('../../../assets/albumgeneralstuff/albumbooks/open_book_pages/doodle_pages/doodle_right.png'),
   },
   {
+    id: 'battleMode',
+    title: 'Battle Mode',
+    kind: 'special',
+    visibleAtStart: true,
+    cover: require('../../../assets/albumgeneralstuff/albumbooks/Orthographic _front_view/battle_mode_front_cover.png'),
+    spine: require('../../../assets/albumgeneralstuff/albumbooks/spines/doodle_spine.png'),
+    openBook: ALBUM_PAPER.battleModeOpen,
+  },
+  {
     id: 'easterEggs',
     title: 'Easter Eggs',
     kind: 'special',
@@ -135,6 +145,25 @@ const SPECIAL_BOOK_PAGE_SPREADS: AlbumPageSpread[] = [
   { id: 'page-3', leftSlots: [], rightSlots: [] },
 ];
 
+const BATTLE_MODE_PAGE_SPREADS: AlbumPageSpread[] = [
+  {
+    id: 'battle-mode-intro-todd',
+    leftPageSource: require('../../../assets/albumgeneralstuff/albumbooks/battle_mode_full_pages_not_puzzle/battle_mode_full_pages/intro_full_page.png'),
+    rightPageSource: require('../../../assets/albumgeneralstuff/albumbooks/battle_mode_full_pages_not_puzzle/battle_mode_full_pages/todd_full_page.png'),
+    leftSlots: [],
+    rightSlots: [],
+  },
+  {
+    id: 'battle-mode-story-nico',
+    leftPageSource: require('../../../assets/albumgeneralstuff/albumbooks/battle_mode_full_pages_not_puzzle/battle_mode_full_pages/story_frag1_after_todd_before_nico_not_puzzle.png'),
+    rightPageSource: require('../../../assets/albumgeneralstuff/albumbooks/battle_mode_full_pages_not_puzzle/battle_mode_full_pages/nico_bio.png'),
+    leftLocked: true,
+    rightRevealPuzzleId: 'battleTodd',
+    leftSlots: [],
+    rightSlots: [],
+  },
+];
+
 function isStickerChapter(chapter: AlbumChapterConfig): chapter is AlbumChapterConfig & { id: AlbumChapterId } {
   return chapter.id !== 'puzzle';
 }
@@ -156,6 +185,8 @@ export function getAlbumPageSpreads(
   albumCounts: Record<string, number> = {},
   albumPuzzlePieces: AlbumPuzzlePieceCounts = {},
 ): AlbumPageSpread[] {
+  if (bookId === 'battleMode') return BATTLE_MODE_PAGE_SPREADS;
+
   if (!isEraBookId(bookId)) {
     return SPECIAL_BOOK_PAGE_SPREADS.map((spread) => ({
       ...spread,

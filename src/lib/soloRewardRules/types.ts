@@ -21,6 +21,7 @@ export type FreshSoloRewardKind =
   | 'power'
   | 'powerPlus'
   | 'platinum'
+  | 'easterEgg'
   | 'puzzlePiece';
 
 export type FreshSoloReward = {

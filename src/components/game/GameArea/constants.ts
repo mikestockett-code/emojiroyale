@@ -1,4 +1,4 @@
-export const ALL_ONE_COMBO = require('../../../../assets/SharedAssets/allonecombo.png');
+export const ALL_ONE_COMBO = require('../../../../assets/SharedAssets/newgameboard.png');
 export const DICE_IMAGE    = require('../../../../assets/SharedAssets/dice.png');
 export const SOLO_TOP      = require('../../../../assets/SharedAssets/sharedtop.png');
 export const BG_IMAGE      = require('../../../../assets/backgrounds/backgroundgamearea.png');

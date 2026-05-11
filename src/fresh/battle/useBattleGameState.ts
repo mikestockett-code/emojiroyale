@@ -1,147 +1,116 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type {
-  BattlePowerId,
-  BattlePowerSlotId,
-  BattlePowerType,
   BoardCell,
   Player,
 } from '../../types';
-import { useGameBoard } from '../../hooks/useGameBoard';
-import { useEP1Powers } from '../../hooks/useEP1Powers';
-import { useSoloCpu } from '../../hooks/useSoloCpu';
-import { useBattleEpiPowers } from './useBattleEpiPowers';
-import { applyFourSquarePower, applyTornadoPower } from '../../lib/battlePowerEffects';
-import { createGameBoardEffectEvent } from '../../lib/gameBoardEffects';
-import { getWinner } from '../../lib/scoring';
+import { useGameBoard, type TurnEndMeta } from '../../hooks/useGameBoard';
+import { useRoundTimer } from '../../hooks/useRoundTimer';
+import { useSoloCpu, type CpuTurnContext } from '../../hooks/useSoloCpu';
+import { useGamePowerSlots, toGameBoardPowerSlot } from '../../hooks/useGamePowerSlots';
+import { useGamePowerPress } from '../../hooks/useGamePowerPress';
+import { useBattleScore } from './useBattleScore';
+import { getWinner } from '../../lib/winDetection';
 import { createSharedPlayerRacks } from '../../lib/sharedRackLogic';
-import { BATTLE_TEST_POWERS } from '../../data/battlePowers';
+import { getScoreForWinner } from '../../lib/gameScoreRules';
 import type { FreshBattleSetup } from './battleSetup.types';
 import { useAudioContext } from '../audio/AudioContext';
 import { getWinSound } from '../../lib/audio';
+import { getBattleCpuDifficulty } from './battleCpuConfig';
+import { useBattleRewards, type BattleRewardOptions } from './useBattleRewards';
+import { useToddNervousMistake } from './useToddNervousMistake';
 
-const ROUND_TIMER_SECONDS = 130;
-const BATTLE_WIN_SCORE = 2000;
-
-function getBattleRoundScore(winType: string): number {
-  if (winType === 'legendary') return 2000;
-  if (winType === 'epic') return 750;
-  return 250;
-}
-
+const ROUND_TIMER_SECONDS = 120;
 export type BattleRoundEndReason = 'playerWin' | 'cpuWin' | 'timeout';
 
 export type BattleRoundEndState = {
   reason: BattleRoundEndReason;
   roundNumber: number;
+  battleComplete?: boolean;
 };
 
-export function useBattleGameState(
-  setup: FreshBattleSetup,
-  albumCounts?: Record<string, number>,
-) {
+export function useBattleGameState(setup: FreshBattleSetup, rewardOptions: BattleRewardOptions = {}) {
   const { playSound } = useAudioContext();
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const timerAlarmFiredRef = useRef(false);
-
-  const ep1 = useEP1Powers(setup.powerSlotIds);
-  const epi = useBattleEpiPowers(setup.powerSlotIds, albumCounts);
+  const stageNumber = setup.stageNumber ?? 1;
+  const cpuId = setup.cpuId ?? 'todd';
+  const cpuDifficultyLevel = getBattleCpuDifficulty(cpuId, stageNumber);
 
   const [currentPlayer, setCurrentPlayer] = useState<Player>('player1');
   const [winner, setWinner] = useState<ReturnType<typeof getWinner>>(null);
   const [roundNumber, setRoundNumber] = useState(1);
   const [roundEndState, setRoundEndState] = useState<BattleRoundEndState | null>(null);
-  const [timerSeconds, setTimerSeconds] = useState(ROUND_TIMER_SECONDS);
   const [timerFrozen, setTimerFrozen] = useState(false);
   const [tortureUsedThisTurn, setTortureUsedThisTurn] = useState(false);
-  const [, setIsSoloCpuThinking] = useState(false);
-  const [playerBattleScore, setPlayerBattleScore] = useState(0);
-  const [cpuBattleScore, setCpuBattleScore] = useState(0);
   const [playerRollsRemaining, setPlayerRollsRemaining] = useState(3);
-  const [battleOver, setBattleOver] = useState(false);
 
-  useEffect(() => {
-    if (roundEndState || winner) {
-      if (timerRef.current) clearInterval(timerRef.current);
-      return;
-    }
+  const {
+    playerBattleScore,
+    cpuBattleScore,
+    battleOver,
+    applyRoundWinScore,
+    resetBattleScore,
+  } = useBattleScore();
+  const battleRewards = useBattleRewards({ stageNumber, rewardOptions });
+  const todd = useToddNervousMistake(cpuId);
+  const { isTimerStealing } = todd;
 
-    timerRef.current = setInterval(() => {
-      if (timerFrozen) return;
-      setTimerSeconds((seconds) => {
-        if (seconds <= 1) {
-          clearInterval(timerRef.current!);
-          setRoundEndState({ reason: 'timeout', roundNumber });
-          return 0;
-        }
-        if (seconds === 11 && !timerAlarmFiredRef.current) {
-          timerAlarmFiredRef.current = true;
-          playSound('timer');
-        }
-        return seconds - 1;
-      });
-    }, 1000);
+  const handleTimerExpire = useCallback(() => {
+    setRoundEndState({ reason: 'timeout', roundNumber });
+  }, [roundNumber]);
 
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [playSound, roundEndState, roundNumber, timerFrozen, winner]);
+  const {
+    seconds: timerSeconds,
+    resetTimer,
+    addSeconds: addTimerSeconds,
+  } = useRoundTimer({
+    initialSeconds: ROUND_TIMER_SECONDS,
+    isPaused: Boolean(roundEndState) || Boolean(winner),
+    isFrozen: timerFrozen,
+    warningAtSeconds: 10,
+    playSound,
+    onExpire: handleTimerExpire,
+  });
 
-  const powerSlotData = useMemo(() => {
-    const result: Record<
-      BattlePowerSlotId,
-      { powerId: BattlePowerId; type: BattlePowerType; label: string; icon: string; usesLeft: number } | null
-    > = { slot1: null, slot2: null };
+  const {
+    powerSlotData,
+    buildPowerSlotsArray,
+    consumePower,
+    resetPowers,
+  } = useGamePowerSlots(setup.powerSlotIds, { allowEpi: true });
 
-    (['slot1', 'slot2'] as BattlePowerSlotId[]).forEach((slotId) => {
-      const powerId = setup.powerSlotIds[slotId];
-      if (!powerId) return;
-      const power = BATTLE_TEST_POWERS.find((entry) => entry.id === powerId);
-      if (!power) return;
-      const usesLeft = power.type === 'EP1' ? ep1.usesLeft(slotId) : epi.epiUsesLeft[slotId];
-      result[slotId] = { powerId, type: power.type, label: power.label, icon: power.icon, usesLeft };
-    });
-
-    return result;
-  }, [ep1, epi.epiUsesLeft, setup.powerSlotIds]);
-
-  const consumePower = useCallback((slotId: BattlePowerSlotId) => {
-    const slot = powerSlotData[slotId];
-    if (!slot) return;
-    if (slot.type === 'EP1') ep1.consume(slotId);
-    else epi.consume(slotId);
-  }, [ep1, epi, powerSlotData]);
-
-  const finishTurn = useCallback((nextBoard: BoardCell[]) => {
+  const finishTurn = useCallback((nextBoard: BoardCell[], meta?: TurnEndMeta) => {
     const nextWinner = getWinner(nextBoard);
     if (nextWinner) {
       playSound(getWinSound(nextWinner.type, nextWinner.player === 'player1'));
       setWinner(nextWinner);
-
-      const roundScore = getBattleRoundScore(nextWinner.type);
+      const roundScore = getScoreForWinner(nextWinner, meta?.moveType === 'roll');
+      const nextPlayerBattleScore = nextWinner.player === 'player1'
+        ? playerBattleScore + roundScore
+        : playerBattleScore;
+      const nextCpuBattleScore = nextWinner.player === 'player2'
+        ? cpuBattleScore + roundScore
+        : cpuBattleScore;
+      const battleComplete = nextPlayerBattleScore >= 2000 || nextCpuBattleScore >= 2000;
+      applyRoundWinScore(nextWinner, meta?.moveType === 'roll');
       if (nextWinner.player === 'player1') {
-        setPlayerBattleScore((prev) => {
-          const next = prev + roundScore;
-          if (next >= BATTLE_WIN_SCORE) setBattleOver(true);
-          return next;
-        });
-      } else {
-        setCpuBattleScore((prev) => {
-          const next = prev + roundScore;
-          if (next >= BATTLE_WIN_SCORE) setBattleOver(true);
-          return next;
-        });
+        battleRewards.grantPlayerRoundRewards(
+          nextWinner,
+          meta?.moveType === 'roll',
+          battleComplete,
+          meta?.effectId === 'tornado',
+        );
+      } else if (battleComplete) {
+        battleRewards.clearCpuBattleCompleteRewards();
       }
-
       setRoundEndState({
         reason: nextWinner.player === 'player1' ? 'playerWin' : 'cpuWin',
         roundNumber,
+        battleComplete,
       });
       return;
     }
-
     setTortureUsedThisTurn(false);
     setCurrentPlayer((player) => (player === 'player1' ? 'player2' : 'player1'));
-  }, [playSound, roundNumber]);
+  }, [applyRoundWinScore, battleRewards, cpuBattleScore, playSound, playerBattleScore, roundNumber]);
 
   const {
     board,
@@ -170,12 +139,8 @@ export function useBattleGameState(
     roundNumber,
     initialPlayerRacks: createSharedPlayerRacks(),
     powerSlots: {
-      slot1: powerSlotData.slot1
-        ? { powerId: powerSlotData.slot1.powerId, type: powerSlotData.slot1.type, usesLeft: powerSlotData.slot1.usesLeft }
-        : null,
-      slot2: powerSlotData.slot2
-        ? { powerId: powerSlotData.slot2.powerId, type: powerSlotData.slot2.type, usesLeft: powerSlotData.slot2.usesLeft }
-        : null,
+      slot1: toGameBoardPowerSlot(powerSlotData.slot1),
+      slot2: toGameBoardPowerSlot(powerSlotData.slot2),
     },
     onConsumePower: consumePower,
     onRackLocked: () => setTortureUsedThisTurn(true),
@@ -184,16 +149,13 @@ export function useBattleGameState(
   });
 
   const powerSlotsArray = useMemo(
-    () =>
-      (['slot1', 'slot2'] as BattlePowerSlotId[])
-        .map((slotId) => {
-          const slot = powerSlotData[slotId];
-          if (!slot) return null;
-          return { slotId, icon: slot.icon, powerId: slot.powerId, isSelected: selectedPowerSlotId === slotId };
-        })
-        .filter(Boolean) as { slotId: string; icon: string; powerId: string; isSelected: boolean }[],
-    [powerSlotData, selectedPowerSlotId],
+    () => buildPowerSlotsArray(selectedPowerSlotId),
+    [buildPowerSlotsArray, selectedPowerSlotId],
   );
+
+  const interceptCpuTurn = useCallback((ctx: CpuTurnContext) =>
+    todd.executeTurn(ctx, { addTimerSeconds, setBoard, setLastMoveIndex, showEp1Launch, playerRacks, rollFlow, roundNumber, setPlayerRacks }),
+  [todd, addTimerSeconds, setBoard, setLastMoveIndex, showEp1Launch, playerRacks, rollFlow, roundNumber, setPlayerRacks]);
 
   useSoloCpu({
     board,
@@ -201,114 +163,87 @@ export function useBattleGameState(
     winnerTitle: winner || roundEndState ? 'battle-over' : null,
     soloMode: 'battle',
     soloRoundNumber: roundNumber,
+    cpuDifficultyLevel,
     cpuRollsRemaining: 0,
     playerRacks,
     rollFlow,
-    setIsSoloCpuThinking,
     setBoard,
     setPlayerRacks,
     setLastMoveIndex,
     onEp1Launched: showEp1Launch,
     onCpuMoveComplete: finishTurn,
+    interceptCpuTurn,
   });
 
-  const handlePowerSlotPress = useCallback((slotId: BattlePowerSlotId) => {
-    if (winner || roundEndState || currentPlayer !== 'player1') return;
-
-    const slot = powerSlotData[slotId];
-    if (!slot || slot.usesLeft <= 0) return;
-
-    if (slot.type === 'EPI') {
-      if (slot.powerId === 'power-plus-10-seconds') {
-        setTimerSeconds((s) => s + 10);
-        setSelectedPowerSlotId(null);
-        epi.consume(slotId);
-        return;
-      }
-      if (slot.powerId === 'power-clock-freeze') {
-        setTimerFrozen(true);
-        playSound('iceFreeze');
-        setSelectedPowerSlotId(null);
-        epi.consume(slotId);
-        return;
-      }
-      if (slot.powerId === 'power-reverse-time') {
-        setTimerSeconds(ROUND_TIMER_SECONDS);
-        setSelectedPowerSlotId(null);
-        epi.consume(slotId);
-        return;
-      }
-      if (slot.powerId === 'power-rerack') {
-        if (tortureUsedThisTurn) return;
-        rerollCurrentRack();
-        setSelectedPowerSlotId(null);
-        epi.consume(slotId);
-        return;
-      }
+  const handleEpiPower = useCallback((powerId: string) => {
+    if (powerId === 'power-plus-10-seconds') {
+      addTimerSeconds(10);
+      todd.triggerPlayerPowerResponse();
+      return true;
     }
-
-    if (slot.powerId === 'power-four-square') {
-      const { nextBoard, lastMoveIndex, affectedIndices } = applyFourSquarePower(board);
-      if (affectedIndices.length === 0) return;
-      showEp1Launch(createGameBoardEffectEvent('fourSquare', 'Four Square', affectedIndices, board));
-      setBoard(nextBoard);
-      setLastMoveIndex(lastMoveIndex);
-      setSelectedPowerSlotId(null);
-      ep1.consume(slotId);
-      finishTurn(nextBoard);
-      return;
+    if (powerId === 'power-clock-freeze') {
+      setTimerFrozen(true);
+      playSound('iceFreeze');
+      todd.triggerPlayerPowerResponse();
+      return true;
     }
-
-    if (slot.powerId === 'power-tornado') {
-      const { nextBoard, lastMoveIndex, affectedIndices } = applyTornadoPower(board);
-      if (affectedIndices.length === 0) return;
-      showEp1Launch(createGameBoardEffectEvent('tornado', 'Tornado', affectedIndices, board));
-      setBoard(nextBoard);
-      setLastMoveIndex(lastMoveIndex);
-      setSelectedPowerSlotId(null);
-      ep1.consume(slotId);
-      finishTurn(nextBoard);
-      return;
+    if (powerId === 'power-reverse-time') {
+      resetTimer(ROUND_TIMER_SECONDS);
+      todd.triggerPlayerPowerResponse();
+      return true;
     }
+    if (powerId === 'power-rerack') {
+      if (tortureUsedThisTurn) return false;
+      rerollCurrentRack();
+      return true;
+    }
+    return false;
+  }, [addTimerSeconds, playSound, rerollCurrentRack, resetTimer, todd, tortureUsedThisTurn]);
 
-    setSelectedPowerSlotId((current) => (current === slotId ? null : slotId));
-  }, [
-    board, currentPlayer, ep1, epi, finishTurn, powerSlotData,
-    rerollCurrentRack, roundEndState, setBoard, setLastMoveIndex,
-    setSelectedPowerSlotId, showEp1Launch, tortureUsedThisTurn, winner,
-  ]);
+  const handlePowerSlotPress = useGamePowerPress({
+    board,
+    powerSlots: powerSlotData,
+    disabled: Boolean(winner) || Boolean(roundEndState) || currentPlayer !== 'player1',
+    selectedPowerSlotId,
+    setSelectedPowerSlotId,
+    consumePower,
+    setBoard,
+    setLastMoveIndex,
+    showEp1Launch,
+    finishTurn,
+    onEpiPower: handleEpiPower,
+  });
 
   const handleContinue = useCallback(() => {
-    timerAlarmFiredRef.current = false;
+    if (roundEndState?.battleComplete) return;
     resetBoardState(undefined, createSharedPlayerRacks());
     setCurrentPlayer('player1');
     setWinner(null);
+    battleRewards.clearRewardPreview();
     setRoundEndState(null);
-    setTimerSeconds(ROUND_TIMER_SECONDS);
+    if (roundEndState?.reason === 'timeout') resetTimer(ROUND_TIMER_SECONDS);
     setTimerFrozen(false);
+    todd.resetTodd();
     setTortureUsedThisTurn(false);
-    ep1.reset();
-    epi.reset();
+    resetPowers();
     setRoundNumber((round) => round + 1);
-  }, [ep1, epi, resetBoardState]);
+  }, [battleRewards, resetBoardState, resetPowers, resetTimer, roundEndState?.battleComplete, roundEndState?.reason, todd]);
 
   const handleBattleReset = useCallback(() => {
-    timerAlarmFiredRef.current = false;
     resetBoardState(undefined, createSharedPlayerRacks());
     setCurrentPlayer('player1');
     setWinner(null);
+    battleRewards.resetBattleRewards();
     setRoundEndState(null);
-    setTimerSeconds(ROUND_TIMER_SECONDS);
+    resetTimer(ROUND_TIMER_SECONDS);
     setTimerFrozen(false);
+    todd.resetTodd();
     setTortureUsedThisTurn(false);
-    ep1.reset();
-    epi.reset();
+    resetPowers();
     setRoundNumber(1);
-    setPlayerBattleScore(0);
-    setCpuBattleScore(0);
     setPlayerRollsRemaining(3);
-    setBattleOver(false);
-  }, [ep1, epi, resetBoardState]);
+    resetBattleScore();
+  }, [battleRewards, resetBattleScore, resetBoardState, resetPowers, resetTimer, todd]);
 
   return {
     board,
@@ -326,10 +261,15 @@ export function useBattleGameState(
     ep1AnimationEvent,
     powerSlotsArray,
     selectedPowerSlotId,
+    rewardPreview: battleRewards.rewardPreview,
+    pendingStickerRewards: battleRewards.pendingStickerRewards,
     playerBattleScore,
     cpuBattleScore,
     playerRollsRemaining,
     battleOver,
+    isWizardOfOzJackpot: battleRewards.isWizardOfOzJackpot,
+    toddThoughtText: todd.thoughtText,
+    isTimerStealing,
     handleSquarePress,
     handleSelectRackIndex,
     handlePowerSlotPress,

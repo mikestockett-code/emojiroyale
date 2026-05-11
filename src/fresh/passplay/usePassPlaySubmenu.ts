@@ -8,9 +8,10 @@ const EMPTY: BattlePowerSlotLoadout = { slot1: null, slot2: null };
 
 export function usePassPlaySubmenu(
   activeProfileId: string | null,
-  secondaryProfileId: string | null
+  secondaryProfileId: string | null,
+  initialWagerId = 'none',
 ) {
-  const [selectedWager, setSelectedWager] = useState('none');
+  const [selectedWager, setSelectedWager] = useState(initialWagerId);
   const [setupPhase, setSetupPhase] = useState<SetupPhase>('setup');
   const [p1Loadout, setP1Loadout] = useState<BattlePowerSlotLoadout>(EMPTY);
   const [p2Loadout, setP2Loadout] = useState<BattlePowerSlotLoadout>(EMPTY);

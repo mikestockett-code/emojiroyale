@@ -9,6 +9,8 @@ import type { FreshProfile } from '../profile/types';
 import type { FreshPassPlaySetup } from '../passplay/passPlaySetup.types';
 import type { FreshSoloSetup } from '../solo/soloSetup.types';
 import type { FreshBattleSetup } from '../battle/battleSetup.types';
+import type { StickerId } from '../../types';
+import type { AlbumPuzzleId } from '../album/album.types';
 
 export type AppRoute = (typeof APP_ROUTES)[keyof typeof APP_ROUTES];
 
@@ -42,6 +44,7 @@ export type PassPlaySubmenuNavigation = {
   onOpenProfiles?: () => void;
   activeProfile?: FreshProfile | null;
   secondaryProfile?: FreshProfile | null;
+  entryMode?: 'normal' | 'goldenPhoenix';
 };
 
 export type BattleSubmenuNavigation = {
@@ -57,8 +60,17 @@ export type GameScreenNavigation = {
 export type BattleGameNavigation = {
   onBackToMenu: () => void;
   onReloadBattle: () => void;
+  onNextBattleStage: () => void;
   battleSetup: FreshBattleSetup;
   activeProfile?: FreshProfile | null;
+  onGrantAlbumSticker?: (profileId: string | null | undefined, stickerId: StickerId, count?: number) => void;
+  onGrantAlbumPuzzlePiece?: (
+    profileId: string | null | undefined,
+    puzzleId: AlbumPuzzleId,
+    pieceId: string,
+    count?: number,
+  ) => void;
+  onGoToHowTo?: () => void;
 };
 
 export type AlbumNavigation = {

@@ -9,6 +9,7 @@ import { Alert } from 'react-native';
 import type { SoloSubmenuNavigation } from '../types/navigation';
 import SoloSubMenu from '../../screens/SoloSubMenu';
 import { useSoloSubmenuState } from '../solo/useSoloSubmenuState';
+import { useAudioContext } from '../audio/AudioContext';
 
 export default function SoloSubmenuScreen({
   onBackToMenu,
@@ -17,6 +18,7 @@ export default function SoloSubmenuScreen({
   activeProfileAvatar,
   activeProfile,
 }: SoloSubmenuNavigation) {
+  const { playSound } = useAudioContext();
   const {
     selectedMode,
     selectableModeIds,
@@ -35,6 +37,7 @@ export default function SoloSubmenuScreen({
           Alert.alert('Not Enough Stickers', startMessage ?? 'You do not qualify for this mode yet.');
           return;
         }
+        playSound('rumble');
         onStartSoloGame(setup);
       }}
       onOpenProfiles={onOpenProfiles}

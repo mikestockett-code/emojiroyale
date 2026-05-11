@@ -69,9 +69,20 @@ export type GameAreaProps = {
   namePlateText?: string;
   timerText?: string;
   isTimerFrozen?: boolean;
+  isTimerStealing?: boolean;
   topRightImageScale?: number;
   topRightImageOffsetX?: number;
   topRightImageOffsetY?: number;
+  topRightThoughtText?: string | null;
+  centerImageOffsetY?: number;
+  namePlateOffsetY?: number;
+  namePlateScale?: number;
+  topScoreValue?: number;
+  topSubLabel?: string;
+  topSubValue?: number;
+  stageText?: string;
+  topRightSubLabel?: string;
+  topRightSubValue?: number;
   layoutScale?: number;
   boardOffsetY?: number;
 

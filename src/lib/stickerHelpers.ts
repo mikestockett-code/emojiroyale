@@ -15,6 +15,15 @@ export function getRewardVisual(rarity: Rarity, stickerId: StickerId) {
   }
 
   switch (rarity) {
+    case 'easterEgg':
+      return {
+        accent: '#16a34a',
+        backgroundColor: '#dcfce7',
+        borderColor: '#86efac',
+        glowColor: 'rgba(34, 197, 94, 0.5)',
+        panelTint: '#f0fdf4',
+        label: 'Easter Egg',
+      };
     case 'platinum':
       return {
         accent: '#475569',
@@ -112,6 +121,14 @@ export function getStickerRarityVisual(sticker: StickerEntry) {
   }
 
   switch (sticker.rarity) {
+    case 'easterEgg':
+      return {
+        borderColor: '#86efac',
+        shadowColor: '#22c55e',
+        shadowOpacity: 0.75,
+        shadowRadius: 16,
+        elevation: 11,
+      };
     case 'ultra':
       return {
         borderColor: '#fb7185',

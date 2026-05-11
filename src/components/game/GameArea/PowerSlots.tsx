@@ -32,13 +32,13 @@ export function PowerSlots({ powerSlots, onPowerSlotPress, isHandoffVisible, wid
             style={({ pressed }) => ({
               position: 'absolute',
               [side]: width * 0.01,
-              top: rackPadTop + height * 0.040,
+              top: rackPadTop + height * 0.055,
               opacity: pressed ? 0.7 : 1,
               zIndex: 25,
             })}
           >
             {slot.powerId && POWER_IMAGES[slot.powerId] ? (
-              <Image source={POWER_IMAGES[slot.powerId]} style={{ width: 89, height: 89 }} resizeMode="contain" />
+              <Image source={POWER_IMAGES[slot.powerId]} style={{ width: 88, height: 88 }} resizeMode="contain" />
             ) : (
               <Text style={{ fontSize: 36 }}>{slot.icon}</Text>
             )}

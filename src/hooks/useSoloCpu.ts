@@ -1,6 +1,3 @@
-// useSoloCpu.ts
-// Controls the Solo CPU turn flow.
-
 import { useEffect, useCallback, useRef } from 'react';
 import type { BoardCell, Player, SoloModeId, StickerId } from '../types';
 import { getSoloCpuDecision, getSoloCpuDifficultyLevel } from '../lib/soloCpuDecision';
@@ -8,11 +5,16 @@ import { createSharedRack } from '../lib/sharedRackLogic';
 import { buildDieCell, applyDieFace } from '../lib/diceLogic';
 import { applyRandomGameBoardEffect, createGameBoardEffectEvent } from '../lib/gameBoardEffects';
 import type { GameBoardEffectEvent, GameBoardEffectId } from '../lib/gameBoardEffects';
-import type { CpuRollFlow } from './soloRollTypes';
+import type { CpuRollFlow } from './rollFlowTypes';
 
+export const CPU_PLACE_FINISH_DELAY_MS = 882;
+export const CPU_ROLL_FINISH_DELAY_MS = 546;
 const CPU_TURN_START_DELAY_MS = 260;
-const CPU_PLACE_FINISH_DELAY_MS = 882;
-const CPU_ROLL_FINISH_DELAY_MS = 546;
+
+export type CpuTurnContext = {
+  board: BoardCell[];
+  finishTurn: (nextBoard: BoardCell[], delayMs?: number) => void;
+};
 
 type Props = {
   board: BoardCell[];
@@ -20,16 +22,18 @@ type Props = {
   winnerTitle: string | null;
   soloMode: SoloModeId;
   soloRoundNumber: number;
+  cpuDifficultyLevel?: number;
   cpuRollsRemaining: number;
   playerRacks: Record<Player, StickerId[]>;
   rollFlow?: CpuRollFlow;
   onCpuRollUsed?: () => void;
-  setIsSoloCpuThinking: (thinking: boolean) => void;
+  setIsSoloCpuThinking?: (thinking: boolean) => void;
   setBoard: (newBoard: BoardCell[]) => void;
   setPlayerRacks: (newRacks: Record<Player, StickerId[]>) => void;
   setLastMoveIndex: (index: number | null) => void;
   onEp1Launched?: (event?: GameBoardEffectEvent | string) => void;
   onCpuMoveComplete: (nextBoard: BoardCell[]) => void;
+  interceptCpuTurn?: (ctx: CpuTurnContext) => boolean;
 };
 
 export function useSoloCpu({
@@ -38,6 +42,7 @@ export function useSoloCpu({
   winnerTitle,
   soloMode,
   soloRoundNumber,
+  cpuDifficultyLevel,
   cpuRollsRemaining,
   playerRacks,
   rollFlow,
@@ -48,6 +53,7 @@ export function useSoloCpu({
   setLastMoveIndex,
   onEp1Launched,
   onCpuMoveComplete,
+  interceptCpuTurn,
 }: Props) {
   const cpuTurnInFlightRef = useRef(false);
   const lastCpuEp1EffectIdRef = useRef<GameBoardEffectId | null>(null);
@@ -59,21 +65,22 @@ export function useSoloCpu({
     if (currentPlayer !== 'player2') return;
 
     cpuTurnInFlightRef.current = true;
-    setIsSoloCpuThinking(true);
+    setIsSoloCpuThinking?.(true);
 
-    const difficultyLevel = getSoloCpuDifficultyLevel(soloMode, soloRoundNumber);
-    const decision = getSoloCpuDecision({
-      board,
-      difficultyLevel,
-      cpuHasRollsLeft: cpuRollsRemaining > 0,
-    });
+    const finishTurn = (nextBoard: BoardCell[], delayMs = CPU_PLACE_FINISH_DELAY_MS) => {
+      setTimeout(() => {
+        setIsSoloCpuThinking?.(false);
+        cpuTurnInFlightRef.current = false;
+        onCpuMoveComplete(nextBoard);
+      }, delayMs);
+    };
 
     const emptySpots = board
       .map((cell, index) => (cell === null ? index : -1))
       .filter(i => i !== -1);
 
     if (emptySpots.length === 0) {
-      setIsSoloCpuThinking(false);
+      setIsSoloCpuThinking?.(false);
       cpuTurnInFlightRef.current = false;
       onCpuMoveComplete(board);
       return;
@@ -84,13 +91,21 @@ export function useSoloCpu({
     const stickerToPlace = rackIndex >= 0 ? cpuRack[rackIndex] : undefined;
 
     if (!stickerToPlace) {
-      setIsSoloCpuThinking(false);
+      setIsSoloCpuThinking?.(false);
       cpuTurnInFlightRef.current = false;
       onCpuMoveComplete(board);
       return;
     }
 
-    // After roll (or immediately if no roll), place the tile and finish the turn
+    if (interceptCpuTurn?.({ board, finishTurn })) return;
+
+    const difficultyLevel = cpuDifficultyLevel ?? getSoloCpuDifficultyLevel(soloMode, soloRoundNumber);
+    const decision = getSoloCpuDecision({
+      board,
+      difficultyLevel,
+      cpuHasRollsLeft: cpuRollsRemaining > 0,
+    });
+
     const doPlace = (boardAfterRoll: BoardCell[]) => {
       const newBoard = [...boardAfterRoll];
       const placeIndex =
@@ -106,31 +121,19 @@ export function useSoloCpu({
       });
       setLastMoveIndex(placeIndex);
       lastCpuEp1EffectIdRef.current = null;
-
-      setTimeout(() => {
-        setIsSoloCpuThinking(false);
-        cpuTurnInFlightRef.current = false;
-        onCpuMoveComplete(newBoard);
-      }, CPU_PLACE_FINISH_DELAY_MS);
+      finishTurn(newBoard);
     };
 
     const finishCpuRoll = (rolledBoard: BoardCell[], rolledIndex: number) => {
       setBoard(rolledBoard);
       setLastMoveIndex(rolledIndex);
-
-      setTimeout(() => {
-        setIsSoloCpuThinking(false);
-        cpuTurnInFlightRef.current = false;
-        onCpuMoveComplete(rolledBoard);
-      }, CPU_ROLL_FINISH_DELAY_MS);
+      finishTurn(rolledBoard, CPU_ROLL_FINISH_DELAY_MS);
     };
 
-    // A CPU roll consumes the CPU turn, matching the human roll flow.
     if (decision.rollTargetIndex !== undefined && rollFlow) {
       const target = decision.rollTargetIndex;
       const cell = board[target];
       if (cell?.faces) {
-        // Pick final face (5-side: excludes die-free at index 5). EP1 itself chooses a varied random EP1 effect.
         const finalFaceIndex = Math.floor(Math.random() * 5);
         onCpuRollUsed?.();
         rollFlow.startCpuRoll(target, finalFaceIndex, (idx, faceIndex) => {
@@ -138,7 +141,7 @@ export function useSoloCpu({
           const rolledCell = rolledBoard[idx];
           const landedFace = rolledCell?.faces?.[faceIndex];
           if (landedFace === 'die-ep1') {
-            const ep1Result = applyRandomGameBoardEffect(rolledBoard, idx, lastCpuEp1EffectIdRef.current);
+            const ep1Result = applyRandomGameBoardEffect(rolledBoard, idx, lastCpuEp1EffectIdRef.current, 'player2');
             lastCpuEp1EffectIdRef.current = ep1Result.effectId;
             onEp1Launched?.(createGameBoardEffectEvent(ep1Result.effectId, ep1Result.effectLabel, ep1Result.affectedIndices, rolledBoard));
             finishCpuRoll(ep1Result.nextBoard, ep1Result.lastMoveIndex ?? idx);
@@ -155,9 +158,10 @@ export function useSoloCpu({
 
     doPlace(board);
   }, [
-    board, currentPlayer, winnerTitle, soloMode, soloRoundNumber,
+    board, currentPlayer, winnerTitle, soloMode, soloRoundNumber, cpuDifficultyLevel,
     cpuRollsRemaining, playerRacks, rollFlow, onCpuRollUsed,
-    setIsSoloCpuThinking, setBoard, setPlayerRacks, setLastMoveIndex, onEp1Launched, onCpuMoveComplete,
+    setIsSoloCpuThinking, setBoard, setPlayerRacks, setLastMoveIndex, onEp1Launched,
+    onCpuMoveComplete, interceptCpuTurn,
   ]);
 
   useEffect(() => {

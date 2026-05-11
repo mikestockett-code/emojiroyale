@@ -1,0 +1,122 @@
+import { StyleSheet } from 'react-native';
+import { theme } from '../../shared/luxuryTheme';
+
+export const howToStyles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: theme.deepBrown,
+  },
+  scroll: {
+    paddingTop: 64,
+    paddingBottom: 60,
+    paddingHorizontal: 18,
+    gap: 14,
+  },
+  screenTitle: {
+    fontSize: 28,
+    fontWeight: '900',
+    color: theme.gold,
+    textAlign: 'center',
+    letterSpacing: 0.5,
+    ...theme.textShadow,
+  },
+  screenSubtitle: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: 'rgba(255,216,107,0.45)',
+    textAlign: 'center',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    marginTop: -4,
+    marginBottom: 4,
+  },
+  card: {
+    backgroundColor: theme.warmBrown,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(255,216,107,0.2)',
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    gap: 10,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: theme.gold,
+    letterSpacing: 0.4,
+  },
+  sectionNumber: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: 'rgba(255,216,107,0.35)',
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    marginBottom: -6,
+  },
+  body: {
+    fontSize: 14,
+    lineHeight: 22,
+    color: 'rgba(255,250,240,0.82)',
+  },
+  bold: {
+    fontWeight: '900',
+    color: '#fff5de',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: 'rgba(255,216,107,0.12)',
+    marginVertical: 2,
+  },
+  winRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'flex-start' as const,
+    gap: 10,
+    paddingVertical: 3,
+  },
+  winLabel: {
+    fontSize: 11,
+    fontWeight: '900',
+    color: theme.gold,
+    width: 110,
+    paddingTop: 2,
+  },
+  winDesc: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 19,
+    color: 'rgba(255,250,240,0.78)',
+  },
+  tipRow: {
+    flexDirection: 'row' as const,
+    gap: 10,
+    alignItems: 'flex-start' as const,
+  },
+  tipBullet: {
+    fontSize: 14,
+    color: theme.gold,
+    marginTop: 3,
+  },
+  tipText: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 20,
+    color: 'rgba(255,250,240,0.82)',
+  },
+  backBtn: {
+    marginTop: 8,
+    alignSelf: 'center' as const,
+    minWidth: 180,
+    paddingHorizontal: 22,
+    paddingVertical: 12,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(255,216,107,0.4)',
+    alignItems: 'center' as const,
+  },
+  backBtnText: {
+    color: theme.gold,
+    fontSize: 14,
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
+});

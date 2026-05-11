@@ -95,7 +95,7 @@ export function getSoloCpuDecision({
   cpuHasRollsLeft,
 }: DecisionParams): SoloCpuDecision {
   // Level 1 — passive: random placement, never rolls
-  if (difficultyLevel === 1) {
+  if (difficultyLevel <= 1) {
     const boardIndex = pickRandomEmpty(board) ?? undefined;
     return { type: 'place', boardIndex };
   }
@@ -106,15 +106,15 @@ export function getSoloCpuDecision({
   // Roll decision (only when no immediate critical block needed)
   let rollTargetIndex: number | undefined;
   if (cpuHasRollsLeft && !hasCriticalThreat) {
-    const rollChance = difficultyLevel === 2 ? 0.20 : 0.38;
+    const rollChance = difficultyLevel === 2 ? 0.20 : difficultyLevel === 3 ? 0.38 : 0.5;
     if (Math.random() < rollChance) {
       const target = pickBestRollTarget(board, scores);
       if (target !== null) rollTargetIndex = target;
     }
   }
 
-  // Place decision — level 2: 65% smart, level 3: 90% smart
-  const smartChance = difficultyLevel === 2 ? 0.65 : 0.90;
+  // Place decision — level 2: 65% smart, level 3: 90% smart, level 4+: boss effort
+  const smartChance = difficultyLevel === 2 ? 0.65 : difficultyLevel === 3 ? 0.90 : 0.97;
   const useSmartPlay = Math.random() < smartChance;
   const boardIndex = useSmartPlay
     ? (pickBestEmpty(scores, board) ?? pickRandomEmpty(board) ?? undefined)

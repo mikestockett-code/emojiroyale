@@ -8,8 +8,4 @@ export type PowerPickProps = {
   initialSlots?: BattlePowerSlotLoadout;
   onConfirm: (slots: BattlePowerSlotLoadout) => void;
   onBack: () => void;
-  bottomInset: number;
 };
-
-export type PowerP1Props = PowerPickProps;
-export type PowerP2Props = PowerPickProps;

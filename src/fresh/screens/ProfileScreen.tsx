@@ -6,8 +6,7 @@ import { ActiveProfileCard } from './profile/ActiveProfileCard';
 import { CreateProfileCard } from './profile/CreateProfileCard';
 import { ProfileHeader } from './profile/ProfileHeader';
 import { ProfileListCard } from './profile/ProfileListCard';
-import { profileButtonStyles } from './profile/profileButtonStyles';
-import { profileScreenStyles } from './profile/ProfileScreen.styles';
+import { profileStyles as styles } from './profile/profileStyles';
 import type { ProfileScreenProps } from './profile/profileScreen.types';
 
 export default function ProfileScreen({
@@ -91,8 +90,3 @@ export default function ProfileScreen({
     </SafeAreaView>
   );
 }
-
-const styles = {
-  ...profileScreenStyles,
-  ...profileButtonStyles,
-};

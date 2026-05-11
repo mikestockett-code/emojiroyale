@@ -10,17 +10,26 @@ import type {
   StickerId,
 } from '../types';
 import type { AudioSourceKey } from '../lib/audio';
-import { useSoloRollFlow } from './useSoloRollFlow';
+import { BOARD_SIZE } from '../constants/gameConstants';
+import { useRollFlow } from './useRollFlow';
 import { applyDieFace, buildDieCell, getRandomFreeSticker } from '../lib/diceLogic';
 import { createSharedPlayerRacks, createSharedRack } from '../lib/sharedRackLogic';
-import { applyRandomGameBoardEffect, createGameBoardEffectEvent } from '../lib/gameBoardEffects';
+import { applyRandomGameBoardEffect, applyTargetedGameBoardEffect, createGameBoardEffectEvent } from '../lib/gameBoardEffects';
 import type { GameBoardEffectEvent, GameBoardEffectId } from '../lib/gameBoardEffects';
 
 // Shared board engine for Solo, Pass-and-play, and Battle.
-// Keep raw board/rack placement, dice-roll resolution, EP1 display state, and battle power board edits here.
-// Mode hooks should own scoring, rewards, turns, overlays, and CPU/story rules instead of duplicating this logic.
-const BOARD_SIZE = 25;
-const BOARD_COLS = 5;
+
+function playEp1Sound(
+  effectId: GameBoardEffectId | string | undefined,
+  playSound: ((key: AudioSourceKey) => void) | undefined,
+  fallback?: AudioSourceKey,
+) {
+  if (effectId === 'tornado') { playSound?.('tornado'); return; }
+  if (effectId === 'clearRow' || effectId === 'clearColumn') { playSound?.('clearRow'); return; }
+  if (effectId === 'fourSquare') { playSound?.('fourSquare'); return; }
+  if (effectId === 'removeTile') { playSound?.('eraser'); return; }
+  if (fallback) playSound?.(fallback);
+}
 
 type LockedRackSlot = { index: number; stickerId: StickerId } | null;
 
@@ -31,7 +40,10 @@ type PowerSlotState = {
 };
 
 type PowerSlotsById = Partial<Record<BattlePowerSlotId, PowerSlotState | null>>;
-type TurnEndMeta = { moveType: 'place' | 'roll' | 'power' };
+export type TurnEndMeta = {
+  moveType: 'place' | 'roll' | 'power';
+  effectId?: GameBoardEffectId;
+};
 
 type UseGameBoardParams = {
   currentPlayer: Player;
@@ -118,18 +130,17 @@ export function useGameBoard({
     const landedFace = selectedCell.faces[faceIndex];
     let nextBoard = [...board];
     let nextLastMoveIndex: number | null = index;
+    let rollEffectId: GameBoardEffectId | undefined;
     if (landedFace === 'die-ep1') {
-      const ep1Result = applyRandomGameBoardEffect(board, index, lastEp1EffectIdRef.current);
+      const ep1Result = applyRandomGameBoardEffect(board, index, lastEp1EffectIdRef.current, currentPlayer);
       nextBoard = ep1Result.nextBoard;
       nextLastMoveIndex = ep1Result.lastMoveIndex;
       lastEp1EffectIdRef.current = ep1Result.effectId;
+      rollEffectId = ep1Result.effectId;
       setEp1EffectLabel(ep1Result.effectLabel);
       setEp1AnimationEvent(createGameBoardEffectEvent(ep1Result.effectId, ep1Result.effectLabel, ep1Result.affectedIndices, board));
       setEp1Visible(true);
-      if (ep1Result.effectId === 'tornado') playSound?.('tornado');
-      else if (ep1Result.effectId === 'clearRow' || ep1Result.effectId === 'clearColumn') playSound?.('clearRow');
-      else if (ep1Result.effectId === 'fourSquare') playSound?.('fourSquare');
-      else if (ep1Result.effectId === 'removeTile') playSound?.('eraser');
+      playEp1Sound(ep1Result.effectId, playSound);
     } else if (landedFace === 'die-free') {
       nextBoard[index] = { player: currentPlayer, stickerId: getRandomFreeSticker() };
       lastEp1EffectIdRef.current = null;
@@ -144,10 +155,10 @@ export function useGameBoard({
     setSelectedEmojiIndex(null);
     setSelectedPowerSlotId(null);
     onRollConsumed?.();
-    onTurnEnd(nextBoard, { moveType: 'roll' });
+    onTurnEnd(nextBoard, { moveType: 'roll', effectId: rollEffectId });
   }, [board, currentPlayer, onRollConsumed, onTurnEnd, playSound, rollsDisabled]);
 
-  const rollFlow = useSoloRollFlow({
+  const rollFlow = useRollFlow({
     board,
     onCommitRoll: handleResolveRoll,
     onEnterRollMode: () => setSelectedEmojiIndex(null),
@@ -165,49 +176,25 @@ export function useGameBoard({
     if (selectedPowerSlotId !== null) {
       const slot = powerSlots?.[selectedPowerSlotId];
       if (!slot || slot.usesLeft <= 0 || slot.powerId === 'power-torture-rack') return;
-      if (board[index] === null) return;
 
-      const nextBoard = [...board];
-      let effectEvent: GameBoardEffectEvent | null = null;
-      if (slot.powerId === 'power-remove-emoji') {
-        nextBoard[index] = null;
-        effectEvent = createGameBoardEffectEvent('removeTile', 'Remove Tile', [index], board);
-      } else if (slot.powerId === 'power-clear-row') {
-        const row = Math.floor(index / BOARD_COLS);
-        const affectedIndices: number[] = [];
-        for (let col = 0; col < BOARD_COLS; col += 1) {
-          const affectedIndex = row * BOARD_COLS + col;
-          affectedIndices.push(affectedIndex);
-          nextBoard[affectedIndex] = null;
-        }
-        effectEvent = createGameBoardEffectEvent('clearRow', 'Clear Row', affectedIndices, board);
-      } else if (slot.powerId === 'power-clear-column') {
-        const col = index % BOARD_COLS;
-        const affectedIndices: number[] = [];
-        for (let row = 0; row < BOARD_COLS; row += 1) {
-          const affectedIndex = row * BOARD_COLS + col;
-          affectedIndices.push(affectedIndex);
-          nextBoard[affectedIndex] = null;
-        }
-        effectEvent = createGameBoardEffectEvent('clearColumn', 'Clear Column', affectedIndices, board);
-      } else {
-        return;
-      }
+      const effectResult = applyTargetedGameBoardEffect(board, index, slot.powerId);
+      if (!effectResult) return;
+      const effectEvent = createGameBoardEffectEvent(
+        effectResult.effectId,
+        effectResult.effectLabel,
+        effectResult.affectedIndices,
+        board,
+      );
 
-      if (effectEvent) {
-        setEp1EffectLabel(effectEvent.label);
-        setEp1AnimationEvent(effectEvent);
-        setEp1Visible(true);
-      }
-      if (effectEvent?.id === 'clearRow' || effectEvent?.id === 'clearColumn') playSound?.('clearRow');
-      else if (effectEvent?.id === 'fourSquare') playSound?.('fourSquare');
-      else if (effectEvent?.id === 'removeTile') playSound?.('eraser');
-      else playSound?.('upgrade');
-      setBoard(nextBoard);
-      setLastMoveIndex(index);
+      setEp1EffectLabel(effectEvent.label);
+      setEp1AnimationEvent(effectEvent);
+      setEp1Visible(true);
+      playEp1Sound(effectEvent?.id, playSound, 'upgrade');
+      setBoard(effectResult.nextBoard);
+      setLastMoveIndex(effectResult.lastMoveIndex);
       setSelectedEmojiIndex(null);
       consumePower(selectedPowerSlotId);
-      onTurnEnd(nextBoard, { moveType: 'power' });
+      onTurnEnd(effectResult.nextBoard, { moveType: 'power', effectId: effectResult.effectId });
       return;
     }
 
@@ -268,10 +255,7 @@ export function useGameBoard({
     setEp1EffectLabel(event.label);
     setEp1AnimationEvent(event);
     setEp1Visible(true);
-    if (event.id === 'tornado') playSound?.('tornado');
-    else if (event.id === 'clearRow' || event.id === 'clearColumn') playSound?.('clearRow');
-    else if (event.id === 'fourSquare') playSound?.('fourSquare');
-    else if (event.id === 'removeTile') playSound?.('eraser');
+    playEp1Sound(event.id, playSound);
   }, [playSound]);
 
   const handleSelectRackIndex = useCallback((index: number) => {

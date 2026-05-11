@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Image, Pressable, Text, View } from 'react-native';
 import { getBronzePuzzle } from './albumPuzzleCatalog';
 import { getCollectedPuzzlePieces, getPuzzleCollectedCount } from './albumPuzzleProgress';
-import { albumPuzzlePageStyles as styles } from './albumPuzzlePageStyles';
+import { albumBookStyles as styles } from '../shared/albumBookStyles';
 import type { AlbumPuzzleId, AlbumPuzzlePieceCounts } from './album.types';
 
 type Props = {

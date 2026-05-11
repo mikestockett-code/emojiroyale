@@ -2,7 +2,7 @@ import React from 'react';
 import type { Animated } from 'react-native';
 import GameArea from '../../components/game/GameArea';
 import type { GameAreaProps } from '../../components/game/GameArea/types';
-import type { SoloRollFlowViewModel } from '../../hooks/soloRollTypes';
+import type { RollFlowViewModel } from '../../hooks/rollFlowTypes';
 import type { BoardCell, StickerId } from '../../types';
 
 type Props = Omit<GameAreaProps,
@@ -15,7 +15,7 @@ type Props = Omit<GameAreaProps,
   board: BoardCell[];
   lastMoveIndex: number | null;
   winningLineIndices?: number[];
-  rollFlow: SoloRollFlowViewModel;
+  rollFlow: RollFlowViewModel;
   onSquarePress: (index: number) => void;
   rack: StickerId[];
   selectedEmojiIndex: number | null;

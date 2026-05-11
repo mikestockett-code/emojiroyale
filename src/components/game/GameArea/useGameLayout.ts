@@ -3,18 +3,18 @@ import { useWindowDimensions } from 'react-native';
 export function useGameLayout(layoutScale = 1, verticalOffset = 0) {
   const { width, height } = useWindowDimensions();
 
-  const imgWidth          = width * 1.19 * layoutScale;
-  const imgRenderedHeight = imgWidth * 1.5;
-  const imgTop            = height * 0.12 + (height - imgRenderedHeight) / 2 + height * verticalOffset;
+  const imgWidth          = width * 0.930 * layoutScale;
+  const imgRenderedHeight = imgWidth * 1.0;
+  const imgTop            = height * 0.395 + height * verticalOffset;
   const imgLeft           = -(imgWidth - width) / 2;
-  const rackPadTop        = imgTop + imgRenderedHeight * 0.6746 - height * 0.012;
-  const anchorX           = imgLeft + imgWidth * 0.508 - width * 0.01;
-  const anchorY           = imgTop + imgRenderedHeight * 0.3696 + height * 0.015;
-  const cellSpacing       = imgWidth * 0.122;
-  const cellSize          = cellSpacing * 0.88;
+  const anchorX           = imgLeft + imgWidth * 0.490;
+  const anchorY           = imgTop  + imgRenderedHeight * 0.455;
+  const cellSpacing       = imgWidth * 0.136;
+  const cellSize          = cellSpacing * 1.030;
+  const rackPadTop        = imgTop + imgRenderedHeight * 0.870;
 
-  const colXOffsets = [width * 0.026, width * 0.01, 0, -width * 0.013, -width * 0.027];
-  const rowYOffsets = [height * 0.018, height * 0.01, 0, -height * 0.005, -height * 0.012];
+  const colXOffsets = [0, 0, 0, 0, 0];
+  const rowYOffsets = [0, 0, 0, 0, 0];
 
   const boardCells = Array.from({ length: 25 }, (_, i) => {
     const col = i % 5;

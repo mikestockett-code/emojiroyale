@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { StickerId } from '../../types';
 import type { AlbumPuzzleId } from '../album/album.types';
 import type { FreshProfile, FreshProfileColor } from './types';
@@ -162,7 +162,7 @@ export function useFreshProfiles() {
     setSecondaryProfileId(profileId);
   };
 
-  const updateSoloHighScore = (profileId: string | null | undefined, score: number) => {
+  const updateSoloHighScore = useCallback((profileId: string | null | undefined, score: number) => {
     if (!profileId) return;
     setProfiles((current) => {
       let didUpdate = false;
@@ -174,9 +174,9 @@ export function useFreshProfiles() {
       });
       return didUpdate ? nextProfiles : current;
     });
-  };
+  }, []);
 
-  const setFavoriteSticker = (profileId: string | null | undefined, stickerId: string | null) => {
+  const setFavoriteSticker = useCallback((profileId: string | null | undefined, stickerId: string | null) => {
     if (!profileId) return;
     setProfiles((current) =>
       current.map((profile) => {
@@ -184,9 +184,9 @@ export function useFreshProfiles() {
         return { ...profile, favoriteStickerId: stickerId ?? undefined };
       }),
     );
-  };
+  }, []);
 
-  const grantAlbumSticker = (profileId: string | null | undefined, stickerId: StickerId, count = 1) => {
+  const grantAlbumSticker = useCallback((profileId: string | null | undefined, stickerId: StickerId, count = 1) => {
     if (!profileId || count <= 0) return;
 
     setProfiles((current) =>
@@ -203,9 +203,9 @@ export function useFreshProfiles() {
         };
       }),
     );
-  };
+  }, []);
 
-  const grantAlbumPuzzlePiece = (
+  const grantAlbumPuzzlePiece = useCallback((
     profileId: string | null | undefined,
     puzzleId: AlbumPuzzleId,
     pieceId: string,
@@ -231,7 +231,7 @@ export function useFreshProfiles() {
         };
       }),
     );
-  };
+  }, []);
 
   return {
     profiles,

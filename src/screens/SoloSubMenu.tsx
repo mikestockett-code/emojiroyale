@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Image, ImageBackground, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { SoloModeCardDeck } from '../components/game/SoloModeCardDeck';
 import { SharedBottomNav } from '../fresh/shared/SharedBottomNav';
+import { SharedSubmenuShell } from '../fresh/shared/SharedSubmenuShell';
 import type { SoloModeId } from '../types';
 import type { FreshProfileColor } from '../fresh/profile/types';
 
@@ -47,7 +48,22 @@ export default function SoloSubMenu({
   };
 
   return (
-    <ImageBackground source={BG} style={ss.root} resizeMode="cover">
+    <SharedSubmenuShell
+      backgroundSource={BG}
+      rootStyle={ss.root}
+      bottomNav={(
+        <SharedBottomNav
+          profileName={profileName}
+          profileAvatar={profileAvatar}
+          profileColor={profileColor}
+          scoreLabel="Score"
+          scoreValue={0}
+          onProfilePress={onOpenProfiles}
+          onBackPress={onBack}
+          onHowToPress={() => {}}
+        />
+      )}
+    >
 
       {/* Card carousel — NOT inside a ScrollView so swipe works freely */}
       <View style={ss.deckArea}>
@@ -78,20 +94,7 @@ export default function SoloSubMenu({
         </View>
       ) : null}
 
-      <View style={ss.bottomNavWrap}>
-        <SharedBottomNav
-          profileName={profileName}
-          profileAvatar={profileAvatar}
-          profileColor={profileColor}
-          scoreLabel="Score"
-          scoreValue={0}
-          onProfilePress={onOpenProfiles}
-          onBackPress={onBack}
-          onHowToPress={() => {}}
-        />
-      </View>
-
-    </ImageBackground>
+    </SharedSubmenuShell>
   );
 }
 
@@ -127,11 +130,5 @@ const ss = StyleSheet.create({
   },
   startMessageDisabled: {
     color: '#ffd700',
-  },
-  bottomNavWrap: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
   },
 });

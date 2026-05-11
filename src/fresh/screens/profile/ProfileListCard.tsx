@@ -2,9 +2,7 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { FRESH_PROFILE_COLORS } from '../../profile/useFreshProfiles';
 import type { FreshProfile } from '../../profile/types';
-import { profileButtonStyles as btn } from './profileButtonStyles';
-import { profileCardStyles as card } from './profileCardStyles';
-import { profileFormStyles as form } from './profileFormStyles';
+import { profileStyles as styles } from './profileStyles';
 
 type Props = {
   profiles: FreshProfile[];
@@ -25,32 +23,32 @@ export function ProfileListCard({
 }: Props) {
   if (profiles.length === 0) {
     return (
-      <View style={card.card}>
-        <Text style={card.cardEyebrow}>MANAGE PROFILES</Text>
-        <Text style={form.emptyText}>No profiles yet — create one above.</Text>
+      <View style={styles.card}>
+        <Text style={styles.cardEyebrow}>MANAGE PROFILES</Text>
+        <Text style={styles.emptyText}>No profiles yet - create one above.</Text>
       </View>
     );
   }
 
   return (
-    <View style={card.card}>
-      <Text style={card.cardEyebrow}>MANAGE PROFILES</Text>
-      <View style={card.profileList}>
+    <View style={styles.card}>
+      <Text style={styles.cardEyebrow}>MANAGE PROFILES</Text>
+      <View style={styles.profileList}>
         {profiles.map((profile) => {
           const isActive    = profile.id === activeProfileId;
           const isSecondary = profile.id === secondaryProfileId;
           const colors      = FRESH_PROFILE_COLORS[profile.color];
 
           return (
-            <View key={profile.id} style={card.profileRow}>
+            <View key={profile.id} style={styles.profileRow}>
               {/* Avatar */}
-              <View style={[card.avatarBadgeSmall, { backgroundColor: colors.bg, borderColor: colors.swatch }]}>
-                <Text style={form.avatarOptionText}>{profile.avatar}</Text>
+              <View style={[styles.avatarBadgeSmall, { backgroundColor: colors.bg, borderColor: colors.swatch }]}>
+                <Text style={styles.avatarOptionText}>{profile.avatar}</Text>
               </View>
 
               {/* Name + badges */}
-              <View style={card.profileRowCopy}>
-                <Text style={card.profileRowName}>{profile.name}</Text>
+              <View style={styles.profileRowCopy}>
+                <Text style={styles.profileRowName}>{profile.name}</Text>
                 <View style={ss.badgeRow}>
                   {isActive    && <Text style={ss.badgeActive}>ACTIVE</Text>}
                   {isSecondary && <Text style={ss.badgeSecondary}>P2</Text>}
@@ -61,25 +59,25 @@ export function ProfileListCard({
               <View style={ss.actionRow}>
                 <Pressable
                   onPress={() => onSetActiveProfile(profile.id)}
-                  style={({ pressed }) => [btn.smallButton, isActive && btn.smallButtonActive, pressed && btn.pressed]}
+                  style={({ pressed }) => [styles.smallButton, isActive && styles.smallButtonActive, pressed && styles.pressed]}
                 >
-                  <Text style={[btn.smallButtonText, isActive && btn.smallButtonTextActive]}>
+                  <Text style={[styles.smallButtonText, isActive && styles.smallButtonTextActive]}>
                     Active
                   </Text>
                 </Pressable>
 
                 <Pressable
                   onPress={() => onSetSecondaryProfile(isSecondary ? null : profile.id)}
-                  style={({ pressed }) => [btn.smallButton, isSecondary && btn.smallButtonSecondary, pressed && btn.pressed]}
+                  style={({ pressed }) => [styles.smallButton, isSecondary && styles.smallButtonSecondary, pressed && styles.pressed]}
                 >
-                  <Text style={[btn.smallButtonText, isSecondary && ss.whiteText]}>P2</Text>
+                  <Text style={[styles.smallButtonText, isSecondary && ss.whiteText]}>P2</Text>
                 </Pressable>
 
                 <Pressable
                   onPress={() => onDeleteProfile(profile.id)}
-                  style={({ pressed }) => [btn.deleteButton, pressed && btn.pressed]}
+                  style={({ pressed }) => [styles.deleteButton, pressed && styles.pressed]}
                 >
-                  <Text style={btn.deleteButtonText}>✕</Text>
+                  <Text style={styles.deleteButtonText}>x</Text>
                 </Pressable>
               </View>
             </View>

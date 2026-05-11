@@ -7,15 +7,22 @@ const WAGER_CARDS = [
   { id: 'legendary', cardImg: require('../../../assets/Cards/LegendaryNormal.png'), glowColor: '#a855f7', borderColor: '#c084fc' },
 ];
 
+const GOLDEN_PHOENIX_WAGER_CARDS = [
+  { id: 'legendary', cardImg: require('../../../assets/Cards/GoldenPhoenixMode.png'), glowColor: '#f59e0b', borderColor: '#fde68a' },
+];
+
 type WagerCardDeckProps = {
   selectedId: string;
   onSelect: (id: string) => void;
+  variant?: 'default' | 'goldenPhoenix';
 };
 
-export default function WagerCardDeck({ selectedId, onSelect }: WagerCardDeckProps) {
+export default function WagerCardDeck({ selectedId, onSelect, variant = 'default' }: WagerCardDeckProps) {
+  const cards = variant === 'goldenPhoenix' ? GOLDEN_PHOENIX_WAGER_CARDS : WAGER_CARDS;
+
   return (
     <SwipeCardDeck
-      cards={WAGER_CARDS}
+      cards={cards}
       selectedId={selectedId}
       onSelect={onSelect}
       containerStyle={{ overflow: 'visible', alignSelf: 'center' }}

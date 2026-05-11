@@ -5,9 +5,7 @@ import {
   FRESH_PROFILE_COLORS,
 } from '../../profile/useFreshProfiles';
 import type { FreshProfileColor } from '../../profile/types';
-import { profileButtonStyles } from './profileButtonStyles';
-import { profileCardStyles } from './profileCardStyles';
-import { profileFormStyles } from './profileFormStyles';
+import { profileStyles as styles } from './profileStyles';
 
 type Props = {
   draftName: string;
@@ -110,9 +108,3 @@ export function CreateProfileCard({
     </View>
   );
 }
-
-const styles = {
-  ...profileCardStyles,
-  ...profileFormStyles,
-  ...profileButtonStyles,
-};

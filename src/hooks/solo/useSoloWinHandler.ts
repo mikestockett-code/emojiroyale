@@ -2,9 +2,10 @@ import { useCallback } from 'react';
 import type { BoardCell, WinnerInfo } from '../../types';
 import type { AudioSourceKey } from '../../lib/audio';
 import { getWinSound } from '../../lib/audio';
-import { getWinner } from '../../lib/scoring';
+import { getWinner } from '../../lib/winDetection';
+import type { TurnEndMeta } from '../useGameBoard';
 
-type SoloTurnMeta = { moveType: 'place' | 'roll' | 'power' };
+type SoloTurnMeta = TurnEndMeta;
 
 type SoloWinHandlerOptions = {
   playSound: (key: AudioSourceKey) => void;
@@ -14,7 +15,7 @@ type SoloWinHandlerOptions = {
     type: 'win' | 'epic' | 'legendary' | null,
     lineIndices: number[],
   ) => void;
-  grantPlayerWinReward: (winner: NonNullable<WinnerInfo>, wasRollWin: boolean) => void;
+  grantPlayerWinReward: (winner: NonNullable<WinnerInfo>, wasRollWin: boolean, isWizardOfOzJackpot?: boolean) => void;
   clearRewardPreview: () => void;
   applyPlayerWinRollReward: (winner: NonNullable<WinnerInfo>) => void;
   setCurrentPlayer: (player: 'player1' | 'player2') => void;
@@ -41,7 +42,7 @@ export function useSoloWinHandler({
     );
 
     if (nextWinner.player === 'player1') {
-      grantPlayerWinReward(nextWinner, meta.moveType === 'roll');
+      grantPlayerWinReward(nextWinner, meta.moveType === 'roll', meta.effectId === 'tornado');
       applyPlayerWinRollReward(nextWinner);
     } else {
       clearRewardPreview();

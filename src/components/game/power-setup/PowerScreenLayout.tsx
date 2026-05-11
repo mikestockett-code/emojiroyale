@@ -1,10 +1,10 @@
 import React from 'react';
-import { Image, ImageBackground, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Image, ImageBackground, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { SharedBottomNav } from '../../../fresh/shared/SharedBottomNav';
-import { GildedButton } from '../SoloResultOverlay/GildedButton';
+import { GildedButton } from '../../../fresh/shared/GameResultOverlay/GildedButton';
 import { EP1Section } from '../../power-selection/EP1Section';
-import { CARD_SIZE } from '../../power-selection/powerCardStyles';
 import { EP1_IMAGES } from '../../power-selection/ep1Config';
+import { submenuStyles as styles } from '../../../fresh/shared/submenuStyles';
 import { BG, SLOT1, SLOT2 } from './constants';
 import type { BattlePowerId, Profile } from '../../../types';
 
@@ -40,14 +40,14 @@ export function PowerScreenLayout({
   const { height } = useWindowDimensions();
 
   return (
-    <ImageBackground source={BG} resizeMode="cover" style={styles.root}>
+    <ImageBackground source={BG} resizeMode="cover" style={styles.screenRoot}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.scroll, { marginTop: -height * 0.02, paddingBottom: 72 + bottomInset }]}
+        contentContainerStyle={[styles.setupScroll, { marginTop: -height * 0.02, paddingBottom: 72 + bottomInset }]}
       >
-        <View style={styles.header}>
+        <View style={styles.powerSetupHeader}>
           {headerLogo}
-          <Text style={styles.subtitle}>{playerLabel}</Text>
+          <Text style={styles.powerSetupSubtitle}>{playerLabel}</Text>
         </View>
 
         <View style={styles.slotRow}>
@@ -101,42 +101,3 @@ export function PowerScreenLayout({
     </ImageBackground>
   );
 }
-
-const styles = StyleSheet.create({
-  root: { flex: 1 },
-  scroll: { alignItems: 'center', paddingHorizontal: 4 },
-  navBar: { position: 'absolute', bottom: 0, left: 0, right: 0 },
-  header: { alignItems: 'center', paddingTop: 8 },
-  subtitle: {
-    color: '#ffd700',
-    fontSize: 14,
-    fontWeight: '900',
-    letterSpacing: 2,
-    textShadowColor: '#000',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 3,
-    marginTop: 4,
-    marginBottom: 12,
-  },
-  slotRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    paddingHorizontal: 12,
-    gap: 10,
-    marginBottom: 8,
-  },
-  slotWrapper: {
-    width: CARD_SIZE,
-    aspectRatio: 1,
-    borderRadius: 12,
-    shadowColor: '#7B2FBE',
-    shadowOpacity: 0.6,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 8,
-  },
-  slotImg: {
-    width: '100%',
-    height: '100%',
-  },
-});

@@ -24,7 +24,7 @@ export {
 } from './scoring';
 
 export { getSoloRewards } from './rewardEngine';
-export { getSoloRewardPreview } from './preview';
+export { getSoloRewardPreview, getSoloRewardPreviews } from './preview';
 export {
   getRewardKindLabel,
   mapRewardKindToStickerRarity,

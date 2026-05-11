@@ -18,20 +18,41 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.stockett119.emojiroyale",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
+      "package": "com.stockett119.emojiroyale",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
+    },
+    "updates": {
+      "url": "https://u.expo.dev/54f98a72-d3d1-426b-bd56-252a8c4ed87b"
+    },
+    "runtimeVersion": {
+      "policy": "sdkVersion"
     },
     "plugins": [
       "expo-audio",
       "expo-font",
       "expo-asset"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "54f98a72-d3d1-426b-bd56-252a8c4ed87b"
+      }
+    },
+    "owner": "stockett119"
   }
 }

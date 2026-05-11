@@ -1,18 +1,20 @@
 import React from 'react';
 import {
-  Dimensions,
   Image,
   ImageBackground,
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import type { FreshProfile } from '../../fresh/profile/types';
 import { ProfileHud } from '../../fresh/shared/ProfileHud';
 import { useAudioContext } from '../../fresh/audio/AudioContext';
+import { HomeEmojiSky } from './HomeEmojiSky';
+import { GoldenPhoenixTrophyBadge } from '../../fresh/shared/GoldenPhoenixTrophyBadge';
+import { useGoldenPhoenixHolder } from '../../hooks/useGoldenPhoenixHolder';
 
 const MENU_BACKGROUND = require('../../../assets/backgrounds/emojihome.png');
 const MIDDLE_LOGO     = require('../../../assets/images/logomiddle.png');
@@ -47,19 +49,19 @@ export default function HomeScreen({
   onOpenProfiles,
   activeProfile = null,
 }: Props) {
-  const { playSound } = useAudioContext();
-  const insets = useSafeAreaInsets();
-  const { width, height } = Dimensions.get('window');
-  const maxW = Math.min(width - 8, 430);
-  const maxH = Math.min(height - insets.top - insets.bottom, 860);
+  const { playSound, isMuted } = useAudioContext();
+  const { width, height } = useWindowDimensions();
+  const goldenPhoenixHolderName = useGoldenPhoenixHolder();
 
   return (
     <View style={ss.root}>
       <ImageBackground
         source={MENU_BACKGROUND}
         resizeMode="cover"
-        style={[ss.stage, { width: maxW, height: maxH }]}
+        style={ss.stage}
       >
+        <HomeEmojiSky width={width} height={height} />
+                <GoldenPhoenixTrophyBadge holderName={goldenPhoenixHolderName} />
         <Image source={MIDDLE_LOGO} style={ss.logo} resizeMode="contain" />
 
         <View style={ss.overlay}>
@@ -94,7 +96,7 @@ export default function HomeScreen({
           <View style={ss.bottomRow}>
             <View style={ss.bottomSideSlot}>
               <CircleBtn
-                icon={<MaterialIcons name="volume-up" size={24} color="#ffe3b0" />}
+                icon={<MaterialIcons name={isMuted ? 'volume-off' : 'volume-up'} size={24} color={isMuted ? 'rgba(255,227,163,0.4)' : '#ffe3b0'} />}
                 label="SOUND"
                 onPress={onToggleMute}
               />
@@ -131,13 +133,13 @@ function CircleBtn({ icon, label, onPress }: { icon: React.ReactNode; label: str
 }
 
 const ss = StyleSheet.create({
-  root:          { flex: 1, backgroundColor: '#000', alignItems: 'center', justifyContent: 'center' },
-  stage:         { alignItems: 'center', justifyContent: 'flex-start' },
-  logo:          { width: '100%', height: 174, marginTop: 60 },
-  overlay:       { flex: 1, width: '100%', alignItems: 'center', justifyContent: 'flex-end', paddingBottom: 40, gap: 16 },
+  root:          { flex: 1, backgroundColor: '#000' },
+  stage:         { flex: 1, alignItems: 'center', justifyContent: 'flex-start', overflow: 'hidden' },
+  logo:          { width: '91.2%', height: '26.6%', marginTop: '12%', zIndex: 3 },
+  overlay:       { flex: 1, width: '100%', alignItems: 'center', justifyContent: 'flex-end', paddingBottom: 22, gap: 14, zIndex: 4 },
   primaryRow:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, paddingHorizontal: 16 },
   secondaryRow:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 },
-  bottomRow:     { flexDirection: 'row', alignItems: 'flex-end', width: '100%', paddingHorizontal: 12, marginBottom: -34 },
+  bottomRow:     { flexDirection: 'row', alignItems: 'flex-end', width: '100%', paddingHorizontal: 12 },
   bottomSideSlot:{ flex: 1, alignItems: 'flex-start', justifyContent: 'flex-end', paddingHorizontal: 2 },
   bottomCenterSlot:{ flex: 1, alignItems: 'center', justifyContent: 'flex-end' },
   bottomSideSlotRight:{ alignItems: 'flex-end', paddingHorizontal: 2 },
@@ -153,10 +155,10 @@ const ss = StyleSheet.create({
     height: 75,
     transform: [{ perspective: 400 }, { rotateX: '35deg' }],
   },
-  ctaSlot:       { maxWidth: 206, alignItems: 'center', justifyContent: 'flex-end' },
+  ctaSlot:       { maxWidth: 208, alignItems: 'center', justifyContent: 'flex-end', transform: [{ translateX: -2 }] },
   ctaImg:        {
-    width: 228,
-    height: 90,
+    width: 230,
+    height: 91,
     transform: [{ perspective: 400 }, { rotateX: '35deg' }],
   },
   circleBtn:     { alignItems: 'center', justifyContent: 'center', gap: 4 },

@@ -1,5 +1,6 @@
 import type { SoloWagerTier, WinnerInfo } from '../../types';
 import { SOLO_POINTS_BY_WIN_TYPE, SOLO_SAFE_SCORE_BY_WAGER } from './constants';
+import { mapWinnerToScoreWinType } from '../gameScoreRules';
 import type { FreshSoloRewardWinType } from './types';
 
 export function getSoloSafeScore(wagerTier: SoloWagerTier | null | undefined): number {
@@ -30,13 +31,5 @@ export function mapWinnerToSoloRewardWinType(
   winner: NonNullable<WinnerInfo>,
   wasRollWin = false,
 ): FreshSoloRewardWinType {
-  if (winner.type === 'legendary') {
-    return wasRollWin ? 'legendaryRoll' : 'legendary';
-  }
-
-  if (winner.type === 'epic') {
-    return wasRollWin ? 'epicRoll' : 'epic';
-  }
-
-  return wasRollWin ? 'commonRoll' : 'common';
+  return mapWinnerToScoreWinType(winner, wasRollWin);
 }

@@ -16,10 +16,13 @@ import React, { useState } from 'react';
 import { APP_ROUTES } from './routes';
 import type { AppRoute } from '../types/navigation';
 import MainMenuScreen from '../screens/MainMenuScreen';
-import HowToScreen from '../screens/HowToScreen';
+import HowToPlayMain from '../screens/how-to/HowToPlayMain';
+import HowToSolo from '../screens/how-to/HowToSolo';
+import HowToBattle from '../screens/how-to/HowToBattle';
+import HowToPassAndPlay from '../screens/how-to/HowToPassAndPlay';
 import SoloSubmenuScreen from '../screens/SoloSubmenuScreen';
 import PassPlaySubmenuScreen from '../screens/PassPlaySubmenuScreen';
-import BattleModeSelectScreen from '../screens/BattleModeSelectScreen';
+import BattleJourneyScreen from '../screens/BattleJourneyScreen';
 import BattleSubmenuScreen from '../screens/BattleSubmenuScreen';
 import SoloGameScreen from '../screens/SoloGameScreen';
 import PassPlayGameScreen from '../screens/PassPlayGameScreen';
@@ -28,6 +31,7 @@ import AlbumScreen from '../screens/AlbumScreen';
 import ProfileScreenShell from '../screens/ProfileScreenShell';
 import type { FreshPassPlaySetup } from '../passplay/passPlaySetup.types';
 import type { FreshBattleSetup } from '../battle/battleSetup.types';
+import type { BattleJourneyStageNumber } from '../battle/battleRewardRules';
 import type { FreshProfile, FreshProfileColor } from '../profile/types';
 import type { FreshSoloSetup } from '../solo/soloSetup.types';
 import { createFreshSoloSetup } from '../solo/soloWagerFactory';
@@ -72,11 +76,15 @@ export default function AppRouter({
   const { toggleMute } = useAudioContext();
   const [currentRoute, setCurrentRoute] = useState<AppRoute>(APP_ROUTES.menu);
   const [profileReturnRoute, setProfileReturnRoute] = useState<AppRoute>(APP_ROUTES.menu);
+  const [passPlayEntryMode, setPassPlayEntryMode] = useState<'normal' | 'goldenPhoenix'>('normal');
   const [soloSetup, setSoloSetup] = useState<FreshSoloSetup>(() => createFreshSoloSetup('practice'));
   const [battleSetup, setBattleSetup] = useState<FreshBattleSetup>({
     playerProfileId: null,
+    cpuId: 'todd',
+    stageNumber: 1,
     powerSlotIds: { slot1: null, slot2: null },
   });
+  const [battleJourneyStageNumber, setBattleJourneyStageNumber] = useState<BattleJourneyStageNumber>(1);
   const [passPlaySetup, setPassPlaySetup] = useState<FreshPassPlaySetup>({
     selectedWagerId: 'none',
     player1ProfileId: null,
@@ -94,19 +102,24 @@ export default function AppRouter({
     setCurrentRoute(APP_ROUTES.profile);
   };
 
+  const openPassPlaySubmenu = (entryMode: 'normal' | 'goldenPhoenix' = 'normal') => {
+    setPassPlayEntryMode(entryMode);
+    setCurrentRoute(APP_ROUTES.passPlaySubmenu);
+  };
+
   if (!profilesReady) {
     return null;
   }
 
-  if (currentRoute === APP_ROUTES.menu) {
+if (currentRoute === APP_ROUTES.menu) {
     return (
       <MainMenuScreen
         onGoToSoloSubmenu={() => setCurrentRoute(APP_ROUTES.soloSubmenu)}
-        onGoToPassPlaySubmenu={() => setCurrentRoute(APP_ROUTES.passPlaySubmenu)}
-        onGoToBattleSubmenu={() => setCurrentRoute(APP_ROUTES.battleModeSelect)}
+        onGoToPassPlaySubmenu={() => openPassPlaySubmenu('normal')}
+        onGoToBattleSubmenu={() => setCurrentRoute(APP_ROUTES.battleJourney)}
         onGoToAlbum={() => setCurrentRoute(APP_ROUTES.album)}
         onGoToHowToPlay={() => setCurrentRoute(APP_ROUTES.howTo)}
-        onGoToCTA={() => {}}
+        onGoToCTA={() => openPassPlaySubmenu('goldenPhoenix')}
         onToggleMute={toggleMute}
         onOpenProfiles={() => openProfileScreen(APP_ROUTES.menu)}
         activeProfile={activeProfile}
@@ -115,7 +128,16 @@ export default function AppRouter({
   }
 
   if (currentRoute === APP_ROUTES.howTo) {
-    return <HowToScreen onBackToMenu={() => setCurrentRoute(APP_ROUTES.menu)} />;
+    return <HowToPlayMain onBack={() => setCurrentRoute(APP_ROUTES.menu)} />;
+  }
+  if (currentRoute === APP_ROUTES.howToSolo) {
+    return <HowToSolo onBack={() => setCurrentRoute(APP_ROUTES.soloGame)} />;
+  }
+  if (currentRoute === APP_ROUTES.howToBattle) {
+    return <HowToBattle onBack={() => setCurrentRoute(APP_ROUTES.battleGame)} />;
+  }
+  if (currentRoute === APP_ROUTES.howToPassPlay) {
+    return <HowToPassAndPlay onBack={() => setCurrentRoute(APP_ROUTES.passPlayGame)} />;
   }
 
   if (currentRoute === APP_ROUTES.profile) {
@@ -159,15 +181,19 @@ export default function AppRouter({
         onOpenProfiles={() => openProfileScreen(APP_ROUTES.passPlaySubmenu)}
         activeProfile={activeProfile}
         secondaryProfile={secondaryProfile}
+        entryMode={passPlayEntryMode}
       />
     );
   }
 
-  if (currentRoute === APP_ROUTES.battleModeSelect) {
+  if (currentRoute === APP_ROUTES.battleJourney) {
     return (
-      <BattleModeSelectScreen
+      <BattleJourneyScreen
         onBackToMenu={() => setCurrentRoute(APP_ROUTES.menu)}
-        onProceedToSetup={() => setCurrentRoute(APP_ROUTES.battleSubmenu)}
+        onProceedToSetup={(stageNumber) => {
+          setBattleJourneyStageNumber(stageNumber);
+          setCurrentRoute(APP_ROUTES.battleSubmenu);
+        }}
         activeProfile={activeProfile}
       />
     );
@@ -178,7 +204,7 @@ export default function AppRouter({
       <BattleSubmenuScreen
         onBackToMenu={() => setCurrentRoute(APP_ROUTES.menu)}
         onStartBattleGame={(setup) => {
-          setBattleSetup(setup);
+          setBattleSetup({ ...setup, cpuId: 'todd', stageNumber: battleJourneyStageNumber });
           setCurrentRoute(APP_ROUTES.battleGame);
         }}
         activeProfile={activeProfile}
@@ -198,6 +224,8 @@ export default function AppRouter({
         onGrantAlbumPuzzlePiece={onGrantAlbumPuzzlePiece}
         onUpdateSoloHighScore={onUpdateSoloHighScore}
         onSetFavoriteSticker={onSetFavoriteSticker}
+        globalHighScore={Math.max(0, ...profiles.map(p => p.soloHighScore ?? 0))}
+        onGoToHowTo={() => setCurrentRoute(APP_ROUTES.howToSolo)}
       />
     );
   }
@@ -211,6 +239,7 @@ export default function AppRouter({
         secondaryProfile={secondaryProfile}
         onGrantAlbumSticker={onGrantAlbumSticker}
         onGrantAlbumPuzzlePiece={onGrantAlbumPuzzlePiece}
+        onGoToHowTo={() => setCurrentRoute(APP_ROUTES.howToPassPlay)}
       />
     );
   }
@@ -219,9 +248,18 @@ export default function AppRouter({
     return (
       <BattleGameScreen
         onBackToMenu={() => setCurrentRoute(APP_ROUTES.menu)}
-        onReloadBattle={() => setCurrentRoute(APP_ROUTES.battleSubmenu)}
+        onReloadBattle={() => setCurrentRoute(APP_ROUTES.battleJourney)}
+        onNextBattleStage={() => {
+          const currentStage = battleSetup.stageNumber ?? 1;
+          const nextStage = currentStage >= 3 ? 1 : ((currentStage + 1) as BattleJourneyStageNumber);
+          setBattleJourneyStageNumber(nextStage);
+          setCurrentRoute(APP_ROUTES.battleSubmenu);
+        }}
         battleSetup={battleSetup}
         activeProfile={activeProfile}
+        onGrantAlbumSticker={onGrantAlbumSticker}
+        onGrantAlbumPuzzlePiece={onGrantAlbumPuzzlePiece}
+        onGoToHowTo={() => setCurrentRoute(APP_ROUTES.howToBattle)}
       />
     );
   }
@@ -233,11 +271,11 @@ export default function AppRouter({
   return (
     <MainMenuScreen
       onGoToSoloSubmenu={() => setCurrentRoute(APP_ROUTES.soloSubmenu)}
-      onGoToPassPlaySubmenu={() => setCurrentRoute(APP_ROUTES.passPlaySubmenu)}
-      onGoToBattleSubmenu={() => setCurrentRoute(APP_ROUTES.battleModeSelect)}
+      onGoToPassPlaySubmenu={() => openPassPlaySubmenu('normal')}
+      onGoToBattleSubmenu={() => setCurrentRoute(APP_ROUTES.battleJourney)}
       onGoToAlbum={() => setCurrentRoute(APP_ROUTES.album)}
       onGoToHowToPlay={() => setCurrentRoute(APP_ROUTES.howTo)}
-      onGoToCTA={() => {}}
+      onGoToCTA={() => openPassPlaySubmenu('goldenPhoenix')}
       onToggleMute={toggleMute}
       onOpenProfiles={() => openProfileScreen(APP_ROUTES.menu)}
       activeProfile={activeProfile}

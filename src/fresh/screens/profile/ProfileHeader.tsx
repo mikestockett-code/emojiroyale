@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, View } from 'react-native';
-import { profileScreenStyles as styles } from './ProfileScreen.styles';
+import { profileStyles as styles } from './profileStyles';
 
 export function ProfileHeader() {
   return (

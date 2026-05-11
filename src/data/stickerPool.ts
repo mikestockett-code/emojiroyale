@@ -4,7 +4,6 @@ import diceFree from '../../assets/CustomEmojis/diceemojis/free.png';
 import sticker67 from '../../assets/CustomEmojis/67.png';
 import epicwinner from '../../assets/CustomEmojis/epicwinner.png';
 import phoenixemoji from '../../assets/CustomEmojis/phoenixemoji.png';
-import platinumtornado from '../../assets/CustomEmojis/platinumtornado.png';
 import polly from '../../assets/CustomEmojis/polly.png';
 import powerClearColumn from '../../assets/PowersSlots/ColumnClear.png';
 import powerClearRow from '../../assets/PowersSlots/RowClearSelector.png';
@@ -14,6 +13,7 @@ import powerRemoveTile from '../../assets/PowersSlots/TheEraserSelector.png';
 import powerTortureRack from '../../assets/PowersSlots/TortureRackSelector.png';
 import psemoji from '../../assets/CustomEmojis/psemoji.png';
 import thehiddenson from '../../assets/CustomEmojis/thehiddenson.png';
+import theWizardOfOz from '../../assets/CustomEmojis/the_wiz.png';
 import { GENERATED_STICKER_SPECS } from './generatedStickerSpecs';
 
 export type StickerPoolEntry = {
@@ -89,14 +89,6 @@ const EXISTING_GAMEPLAY_STICKERS: Omit<StickerPoolEntry, 'albumNumber'>[] = [
     rarity: 'legendary',
     playable: false,
     imageSource: epicwinner,
-    rewardOnly: true,
-  },
-  {
-    id: 'platinum-tornado',
-    name: 'Platinum Tornado',
-    rarity: 'platinum',
-    playable: false,
-    imageSource: platinumtornado,
     rewardOnly: true,
   },
 ];
@@ -187,6 +179,15 @@ const GOLDEN_PHOENIX_STICKER: Omit<StickerPoolEntry, 'albumNumber'> = {
   rewardOnly: true,
 };
 
+const WIZARD_OF_OZ_STICKER: Omit<StickerPoolEntry, 'albumNumber'> = {
+  id: 'wizard-of-oz',
+  name: 'The Wizard Of Oz',
+  rarity: 'easterEgg',
+  playable: false,
+  imageSource: theWizardOfOz,
+  rewardOnly: true,
+};
+
 function getBetaRarity(seed: number): Exclude<StickerPoolRarity, 'ultra' | 'rare' | 'easterEgg' | 'emojiPowers'> {
   const roll = seed % 100;
   if (roll < 56) return 'common';
@@ -216,6 +217,7 @@ const ALL_STICKERS_RAW: Omit<StickerPoolEntry, 'albumNumber'>[] = [
   ...GENERATED_STICKERS,
   ...HOLIDAY_EVENT_STICKERS,
   GOLDEN_PHOENIX_STICKER,
+  WIZARD_OF_OZ_STICKER,
 ];
 
 const ALL_STICKERS: StickerPoolEntry[] = ALL_STICKERS_RAW.map((sticker, index) => ({

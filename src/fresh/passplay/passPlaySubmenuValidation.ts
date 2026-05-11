@@ -1,26 +1,38 @@
 import type { FreshProfile } from '../profile/types';
-import { ALBUM_STICKER_CATALOG } from '../album/albumStickerCatalog';
+
+type PassPlayWagerValidationOptions = {
+  goldenPhoenixRequired?: boolean;
+  goldenPhoenixHolderName?: string;
+};
 
 export function getPassPlayWagerBlockReason(
   wagerId: string,
   p1Profile: FreshProfile | null,
   p2Profile: FreshProfile | null,
+  options: PassPlayWagerValidationOptions = {},
 ) {
   if (!p1Profile || !p2Profile) return 'Choose both P1 and P2 before starting Pass & Play.';
-  if (wagerId === 'none') return null;
+  if (!options.goldenPhoenixRequired) return null;
 
-  const chapterId = wagerId === 'legendary' ? 'legendary' : wagerId === 'epic' ? 'epic' : null;
-  if (!chapterId) return null;
+  if (wagerId !== 'legendary') {
+    return 'The Golden Phoenix challenge needs the legendary sticker wager.';
+  }
 
-  const missingNames = [p1Profile, p2Profile]
-    .filter((profile) => {
-      const albumCounts = profile.albumCounts ?? {};
-      return !ALBUM_STICKER_CATALOG.some((sticker) => sticker.chapterId === chapterId && (albumCounts[sticker.id] ?? 0) > 0);
-    })
-    .map((profile) => profile.name);
+  const holderName = options.goldenPhoenixHolderName?.trim();
+  if (!holderName) {
+    return 'Checking who holds the Golden Phoenix trophy...';
+  }
 
-  if (missingNames.length === 0) return null;
+  if (holderName.toLowerCase() === 'open') {
+    return 'The Golden Phoenix trophy is still open. Claim it with a legendary win first.';
+  }
 
-  const label = chapterId === 'legendary' ? 'Legendary' : 'Epic';
-  return `${missingNames.join(' and ')} need at least one ${label} sticker to play this wager.`;
+  const p1Name = p1Profile.name.trim().toLowerCase();
+  const p2Name = p2Profile.name.trim().toLowerCase();
+  const holderKey = holderName.toLowerCase();
+  if (p1Name !== holderKey && p2Name !== holderKey) {
+    return `The Golden Phoenix is held by ${holderName}. Choose that profile as P1 or P2 to start.`;
+  }
+
+  return null;
 }

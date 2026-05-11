@@ -1,59 +1,37 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type {
   StickerId,
-  BattlePowerId,
   BattlePowerSlotId,
-  BattlePowerType,
   BoardCell,
   Player,
 } from '../../../types';
-import {
-  getSoloRewardPreview,
-  mapWinnerToSoloRewardWinType,
-  type FreshSoloRewardPreview,
-} from '../../../lib/soloRewardRules';
+import type { FreshSoloRewardPreview } from '../../../lib/soloRewardRules';
 import { useGameBoard } from '../../../hooks/useGameBoard';
-import { useEP1Powers } from '../../../hooks/useEP1Powers';
-import { applyFourSquarePower, applyTornadoPower } from '../../../lib/battlePowerEffects';
-import { createGameBoardEffectEvent } from '../../../lib/gameBoardEffects';
-import { getWinner } from '../../../lib/scoring';
+import { useGamePowerSlots, toGameBoardPowerSlot } from '../../../hooks/useGamePowerSlots';
+import { useSharedRollCounts } from '../../../hooks/useSharedRollCounts';
+import { useGamePowerPress } from '../../../hooks/useGamePowerPress';
+import { useHandoff } from '../../../hooks/useHandoff';
+import { getWinner } from '../../../lib/winDetection';
 import { createSharedPlayerRacks } from '../../../lib/sharedRackLogic';
-import { BATTLE_TEST_POWERS } from '../../../data/battlePowers';
 import { ALBUM_STICKER_CATALOG } from '../../album/albumStickerCatalog';
 import type { FreshPassPlaySetup } from '../../passplay/passPlaySetup.types';
 import { useAudioContext } from '../../audio/AudioContext';
 import { getWinSound } from '../../../lib/audio';
+import { createWizardOfOzRewardPreview, grantWizardOfOzJackpot } from '../../../lib/jackpotRewards';
+import { buildRoundRewardPreviews, grantRoundRewardPreviews } from '../../../lib/sharedRoundRewards';
+import type { TurnEndMeta } from '../../../hooks/useGameBoard';
 import type { AlbumPuzzleId, AlbumPuzzlePieceCounts } from '../../album/album.types';
+import { setGoldenPhoenixHolderName } from '../../../hooks/useGoldenPhoenixHolder';
 
 const DEFAULT_HANDOFF_DELAY_MS = 950;
 const EP1_HANDOFF_DELAY_MS = 2600;
 
-type RackPowerSlot = {
-  slotId: BattlePowerSlotId;
-  powerId: BattlePowerId;
-  power: { type: BattlePowerType; label: string; detail: string; icon: string };
-  count: number;
-  isUsed: boolean;
-};
-
-function buildPowerSlot(slotId: BattlePowerSlotId, powerId: BattlePowerId | null): RackPowerSlot | null {
-  if (!powerId) return null;
-  const power = BATTLE_TEST_POWERS.find((entry) => entry.id === powerId);
-  if (!power) return null;
-  return {
-    slotId,
-    powerId,
-    power: { type: power.type, label: power.label, detail: power.detail, icon: power.icon },
-    count: 1,
-    isUsed: false,
-  };
-}
-
 type PassPlayRewardOptions = {
   activeProfileId?: string | null;
   secondaryProfileId?: string | null;
-  activeAlbumCounts?: Record<string, number>;
-  secondaryAlbumCounts?: Record<string, number>;
+  activeProfileName?: string | null;
+  secondaryProfileName?: string | null;
+  isGoldenPhoenixOpen?: boolean;
   activeAlbumPuzzlePieces?: AlbumPuzzlePieceCounts;
   secondaryAlbumPuzzlePieces?: AlbumPuzzlePieceCounts;
   onGrantAlbumSticker?: (profileId: string | null | undefined, stickerId: StickerId, count?: number) => void;
@@ -71,20 +49,22 @@ type WagerPayout = {
   label: string;
 } | null;
 
+type PassPlayTurnMeta = TurnEndMeta & {
+  handoffDelayMs?: number;
+};
+
 function getWagerChapterId(wagerId: string) {
   if (wagerId === 'legendary') return 'legendary';
   if (wagerId === 'epic') return 'epic';
   return null;
 }
 
-function pickOwnedWagerStickerId(wagerId: string, albumCounts: Record<string, number> = {}) {
+function pickWagerStickerId(wagerId: string) {
   const chapterId = getWagerChapterId(wagerId);
   if (!chapterId) return null;
 
-  const ownedSticker = ALBUM_STICKER_CATALOG.find(
-    (sticker) => sticker.chapterId === chapterId && (albumCounts[sticker.id] ?? 0) > 0,
-  );
-  return ownedSticker?.id ?? null;
+  const stickerPool = ALBUM_STICKER_CATALOG.filter((sticker) => sticker.chapterId === chapterId);
+  return stickerPool[Math.floor(Math.random() * stickerPool.length)]?.id ?? null;
 }
 
 function getAlbumStickerLabel(stickerId: StickerId) {
@@ -93,74 +73,76 @@ function getAlbumStickerLabel(stickerId: StickerId) {
 
 export function usePassPlayGameState(passPlaySetup: FreshPassPlaySetup, rewardOptions: PassPlayRewardOptions = {}) {
   const { playSound } = useAudioContext();
-  const handoffTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (handoffTimerRef.current) clearTimeout(handoffTimerRef.current);
-    };
-  }, []);
-
-  const ep1P1 = useEP1Powers(passPlaySetup.powerSlotIds.player1);
-  const ep1P2 = useEP1Powers(passPlaySetup.powerSlotIds.player2);
+  const { isHandoffVisible, scheduleHandoff, hideHandoff, clearHandoffTimer } = useHandoff();
+  const player1Powers = useGamePowerSlots(passPlaySetup.powerSlotIds.player1, { allowEpi: false });
+  const player2Powers = useGamePowerSlots(passPlaySetup.powerSlotIds.player2, { allowEpi: false });
+  const rackOptions = useMemo(
+    () => ({ forceLegendarySet: rewardOptions.isGoldenPhoenixOpen === true }),
+    [rewardOptions.isGoldenPhoenixOpen],
+  );
 
   const [currentPlayer, setCurrentPlayer] = useState<Player>('player1');
   const [winner, setWinner] = useState<ReturnType<typeof getWinner>>(null);
   const [rewardPreview, setRewardPreview] = useState<FreshSoloRewardPreview | null>(null);
   const [wagerPayout, setWagerPayout] = useState<WagerPayout>(null);
-  const [isHandoffVisible, setIsHandoffVisible] = useState(false);
-  const [rollCounts, setRollCounts] = useState({ player1: 3, player2: 3 });
+  const [goldenPhoenixHolderName, setGoldenPhoenixHolderNameState] = useState<string | null>(null);
+  const { rollCounts, consumeRoll, resetRolls } = useSharedRollCounts();
 
   const currentPowerSlots = useMemo(() => {
-    const slotIds = passPlaySetup.powerSlotIds[currentPlayer];
-    const ep1Current = currentPlayer === 'player1' ? ep1P1 : ep1P2;
-    const slot1 = buildPowerSlot('slot1', slotIds.slot1);
-    const slot2 = buildPowerSlot('slot2', slotIds.slot2);
-    return {
-      slot1: slot1 ? { ...slot1, isUsed: ep1Current.slotUsed.slot1 } : null,
-      slot2: slot2 ? { ...slot2, isUsed: ep1Current.slotUsed.slot2 } : null,
-    };
-  }, [currentPlayer, ep1P1, ep1P2, passPlaySetup.powerSlotIds]);
+    return currentPlayer === 'player1' ? player1Powers.powerSlotData : player2Powers.powerSlotData;
+  }, [currentPlayer, player1Powers.powerSlotData, player2Powers.powerSlotData]);
 
   const handleTurnEnd = useCallback((nextBoard: BoardCell[], metaOrDelayMs?: unknown) => {
-    const handoffDelayMs = typeof metaOrDelayMs === 'number' ? metaOrDelayMs : DEFAULT_HANDOFF_DELAY_MS;
+    const meta = typeof metaOrDelayMs === 'object' && metaOrDelayMs !== null ? metaOrDelayMs as PassPlayTurnMeta : null;
+    const handoffDelayMs =
+      typeof metaOrDelayMs === 'number'
+        ? metaOrDelayMs
+        : meta?.handoffDelayMs ?? DEFAULT_HANDOFF_DELAY_MS;
+    const wasRollWin = meta?.moveType === 'roll';
+    const isWizardOfOzJackpot = meta?.effectId === 'tornado';
     const nextWinner = getWinner(nextBoard);
     if (nextWinner) {
       playSound(getWinSound(nextWinner.type, true));
       setWinner(nextWinner);
-      setIsHandoffVisible(false);
+      hideHandoff();
 
       const winnerProfileId =
         nextWinner.player === 'player1'
           ? rewardOptions.activeProfileId
           : rewardOptions.secondaryProfileId;
+      const winnerProfileName =
+        nextWinner.player === 'player1'
+          ? rewardOptions.activeProfileName
+          : rewardOptions.secondaryProfileName;
       const winnerPuzzlePieces =
         nextWinner.player === 'player1'
           ? rewardOptions.activeAlbumPuzzlePieces
           : rewardOptions.secondaryAlbumPuzzlePieces;
-      const rewardPreview = getSoloRewardPreview(
-        mapWinnerToSoloRewardWinType(nextWinner, false),
-        'skip',
-        false,
-        winnerPuzzlePieces ?? {},
-      );
-      if (rewardPreview?.kind === 'puzzlePiece' && rewardPreview.puzzleId && rewardPreview.puzzlePieceId) {
-        rewardOptions.onGrantAlbumPuzzlePiece?.(
-          winnerProfileId,
-          rewardPreview.puzzleId,
-          rewardPreview.puzzlePieceId,
-          1,
-        );
-      } else if (rewardPreview?.stickerId) {
-        rewardOptions.onGrantAlbumSticker?.(winnerProfileId, rewardPreview.stickerId, rewardPreview.count);
+      if (nextWinner.type === 'legendary' && rewardOptions.isGoldenPhoenixOpen && winnerProfileName) {
+        setGoldenPhoenixHolderNameState(winnerProfileName);
+        void setGoldenPhoenixHolderName(winnerProfileName);
+      }
+      const rewardPreviews = buildRoundRewardPreviews({
+        winner: nextWinner,
+        wasRollWin,
+        wagerTier: 'skip',
+        albumPuzzlePieces: winnerPuzzlePieces ?? {},
+      });
+      const jackpotPreview: FreshSoloRewardPreview | null = isWizardOfOzJackpot
+        ? createWizardOfOzRewardPreview()
+        : null;
+      const rewardPreview = jackpotPreview ?? rewardPreviews[0] ?? null;
+      grantRoundRewardPreviews(rewardPreviews, {
+        profileId: winnerProfileId,
+        onGrantAlbumSticker: rewardOptions.onGrantAlbumSticker,
+        onGrantAlbumPuzzlePiece: rewardOptions.onGrantAlbumPuzzlePiece,
+      });
+      if (isWizardOfOzJackpot) {
+        grantWizardOfOzJackpot(winnerProfileId, rewardOptions.onGrantAlbumSticker);
       }
       setRewardPreview(rewardPreview);
 
-      const loserAlbumCounts =
-        nextWinner.player === 'player1'
-          ? rewardOptions.secondaryAlbumCounts
-          : rewardOptions.activeAlbumCounts;
-      const wagerStickerId = pickOwnedWagerStickerId(passPlaySetup.selectedWagerId, loserAlbumCounts);
+      const wagerStickerId = pickWagerStickerId(passPlaySetup.selectedWagerId);
       if (wagerStickerId) {
         rewardOptions.onGrantAlbumSticker?.(winnerProfileId, wagerStickerId, 1);
         setWagerPayout({
@@ -174,14 +156,13 @@ export function usePassPlayGameState(passPlaySetup: FreshPassPlaySetup, rewardOp
       return;
     }
 
-    if (handoffTimerRef.current) clearTimeout(handoffTimerRef.current);
-    handoffTimerRef.current = setTimeout(() => setIsHandoffVisible(true), handoffDelayMs);
-  }, [passPlaySetup.selectedWagerId, playSound, rewardOptions]);
+    scheduleHandoff(handoffDelayMs);
+  }, [hideHandoff, passPlaySetup.selectedWagerId, playSound, rewardOptions, scheduleHandoff]);
 
   const consumePower = useCallback((slotId: BattlePowerSlotId) => {
-    if (currentPlayer === 'player1') ep1P1.consume(slotId);
-    else ep1P2.consume(slotId);
-  }, [currentPlayer, ep1P1, ep1P2]);
+    if (currentPlayer === 'player1') player1Powers.consumePower(slotId);
+    else player2Powers.consumePower(slotId);
+  }, [currentPlayer, player1Powers, player2Powers]);
 
   const {
     board,
@@ -204,95 +185,52 @@ export function usePassPlayGameState(passPlaySetup: FreshPassPlaySetup, rewardOp
     onTurnEnd: handleTurnEnd,
     rollsDisabled: Boolean(winner) || isHandoffVisible || rollCounts[currentPlayer] <= 0,
     interactionDisabled: Boolean(winner) || isHandoffVisible,
-    initialPlayerRacks: createSharedPlayerRacks(),
+    initialPlayerRacks: createSharedPlayerRacks(undefined, rackOptions),
     powerSlots: {
-      slot1: currentPowerSlots.slot1
-        ? {
-            powerId: currentPowerSlots.slot1.powerId,
-            type: currentPowerSlots.slot1.power.type,
-            usesLeft: currentPowerSlots.slot1.isUsed ? 0 : currentPowerSlots.slot1.count,
-          }
-        : null,
-      slot2: currentPowerSlots.slot2
-        ? {
-            powerId: currentPowerSlots.slot2.powerId,
-            type: currentPowerSlots.slot2.power.type,
-            usesLeft: currentPowerSlots.slot2.isUsed ? 0 : currentPowerSlots.slot2.count,
-          }
-        : null,
+      slot1: toGameBoardPowerSlot(currentPowerSlots.slot1),
+      slot2: toGameBoardPowerSlot(currentPowerSlots.slot2),
     },
     onConsumePower: consumePower,
-    onRollConsumed: () => {
-      setRollCounts((current) => ({
-        ...current,
-        [currentPlayer]: Math.max(0, current[currentPlayer] - 1),
-      }));
-    },
+    onRollConsumed: () => consumeRoll(currentPlayer),
     playSound,
   });
 
-  const handlePressPassPlayPower = useCallback((slotId: BattlePowerSlotId) => {
-    if (winner || isHandoffVisible) return;
-    const slot = currentPowerSlots[slotId];
-    if (!slot || slot.isUsed) return;
+  const getPassPlayPowerTurnMeta = useCallback(() => ({ handoffDelayMs: EP1_HANDOFF_DELAY_MS }), []);
 
-    if (slot.powerId === 'power-four-square') {
-      const { nextBoard, lastMoveIndex, affectedIndices } = applyFourSquarePower(board);
-      if (affectedIndices.length === 0) return;
-      showEp1Launch(createGameBoardEffectEvent('fourSquare', 'Four Square', affectedIndices, board));
-      setBoard(nextBoard);
-      setLastMoveIndex(lastMoveIndex);
-      consumePower(slotId);
-      handleTurnEnd(nextBoard, EP1_HANDOFF_DELAY_MS);
-      return;
-    }
-
-    if (slot.powerId === 'power-tornado') {
-      const { nextBoard, lastMoveIndex, affectedIndices } = applyTornadoPower(board);
-      if (affectedIndices.length === 0) return;
-      showEp1Launch(createGameBoardEffectEvent('tornado', 'Tornado', affectedIndices, board));
-      setBoard(nextBoard);
-      setLastMoveIndex(lastMoveIndex);
-      consumePower(slotId);
-      handleTurnEnd(nextBoard, EP1_HANDOFF_DELAY_MS);
-      return;
-    }
-
-    setSelectedPowerSlotId((current) => (current === slotId ? null : slotId));
-  }, [
+  const handlePressPassPlayPower = useGamePowerPress({
     board,
+    powerSlots: currentPowerSlots,
+    disabled: Boolean(winner) || isHandoffVisible,
+    selectedPowerSlotId,
+    setSelectedPowerSlotId,
     consumePower,
-    currentPowerSlots,
-    handleTurnEnd,
-    isHandoffVisible,
     setBoard,
     setLastMoveIndex,
-    setSelectedPowerSlotId,
     showEp1Launch,
-    winner,
-  ]);
+    finishTurn: handleTurnEnd,
+    getPowerTurnMeta: getPassPlayPowerTurnMeta,
+  });
 
   const handleContinue = useCallback(() => {
     playSound('button');
-    setIsHandoffVisible(false);
+    hideHandoff();
     setSelectedPowerSlotId(null);
     setCurrentPlayer((player) => (player === 'player1' ? 'player2' : 'player1'));
-  }, [playSound, setSelectedPowerSlotId]);
+  }, [hideHandoff, playSound, setSelectedPowerSlotId]);
 
   const handleRematch = useCallback(() => {
     playSound('button');
-    if (handoffTimerRef.current) clearTimeout(handoffTimerRef.current);
-    handoffTimerRef.current = null;
+    clearHandoffTimer();
     setCurrentPlayer('player1');
     setWinner(null);
     setRewardPreview(null);
     setWagerPayout(null);
-    setIsHandoffVisible(false);
-    setRollCounts({ player1: 3, player2: 3 });
-    ep1P1.reset();
-    ep1P2.reset();
-    resetBoardState(undefined, createSharedPlayerRacks());
-  }, [ep1P1, ep1P2, playSound, resetBoardState]);
+    hideHandoff();
+    resetRolls();
+    player1Powers.resetPowers();
+    player2Powers.resetPowers();
+    resetBoardState(undefined, createSharedPlayerRacks(undefined, rackOptions));
+  }, [clearHandoffTimer, hideHandoff, playSound, player1Powers, player2Powers, rackOptions, resetBoardState]);
 
   return {
     board,
@@ -305,6 +243,7 @@ export function usePassPlayGameState(passPlaySetup: FreshPassPlaySetup, rewardOp
     winningLineIndices: winner?.indices ?? [],
     rewardPreview,
     wagerPayout,
+    goldenPhoenixHolderName,
     rollCounts,
     isHandoffVisible,
     rollFlow,

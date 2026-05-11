@@ -4,7 +4,7 @@ import { useSoloCpu } from './useSoloCpu';
 import { createSharedPlayerRacks } from '../lib/sharedRackLogic';
 import type { FreshSoloSetup } from '../fresh/solo/soloSetup.types';
 import { useAudioContext } from '../fresh/audio/AudioContext';
-import { useSoloResultOverlay } from './solo/useSoloResultOverlay';
+import { useGameResultOverlay } from './useGameResultOverlay';
 import { useSoloRewards } from './solo/useSoloRewards';
 import { useSoloRolls } from './solo/useSoloRolls';
 import { useSoloRound } from './solo/useSoloRound';
@@ -17,7 +17,7 @@ export function useSoloGameState(soloSetup: FreshSoloSetup, options: SoloGameSta
   const soloMode = soloSetup.modeId ?? 'practice';
 
   const round = useSoloRound();
-  const resultOverlay = useSoloResultOverlay();
+  const resultOverlay = useGameResultOverlay();
   const rolls = useSoloRolls();
   const rewards = useSoloRewards({
     activeProfileId: options.activeProfileId,
@@ -53,6 +53,7 @@ export function useSoloGameState(soloSetup: FreshSoloSetup, options: SoloGameSta
   } = rolls;
   const {
     rewardPreview,
+    runRewardPreviews,
     currentScore,
     grantPlayerWinReward,
     clearRewardPreview,
@@ -154,6 +155,7 @@ export function useSoloGameState(soloSetup: FreshSoloSetup, options: SoloGameSta
     winnerType,
     isResultOverlayVisible,
     rewardPreview,
+    runRewardPreviews,
     currentScore,
     playerRollsRemaining,
     cpuRollsRemaining,

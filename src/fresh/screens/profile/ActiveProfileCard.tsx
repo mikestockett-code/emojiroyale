@@ -2,8 +2,7 @@ import React from 'react';
 import { Text, View } from 'react-native';
 import { FRESH_PROFILE_COLORS } from '../../profile/useFreshProfiles';
 import type { FreshProfile } from '../../profile/types';
-import { profileCardStyles } from './profileCardStyles';
-import { profileFormStyles } from './profileFormStyles';
+import { profileStyles as styles } from './profileStyles';
 
 type Props = {
   activeProfile: FreshProfile | null;
@@ -62,8 +61,3 @@ export function ActiveProfileCard({ activeProfile, secondaryProfile }: Props) {
     </View>
   );
 }
-
-const styles = {
-  ...profileCardStyles,
-  ...profileFormStyles,
-};

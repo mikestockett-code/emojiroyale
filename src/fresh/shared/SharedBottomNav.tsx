@@ -48,7 +48,7 @@ export function SharedBottomNav({
   bottomInset = 0,
   style,
 }: SharedBottomNavProps) {
-  const { playSound } = useAudioContext();
+  const { playSound, isMuted } = useAudioContext();
   const hasSecondProfile = !!secondProfileName;
 
   return (
@@ -84,8 +84,8 @@ export function SharedBottomNav({
             }}
             style={({ pressed }) => [styles.bottomNavBtn, pressed && styles.pressed]}
           >
-            <MaterialIcons name="volume-up" size={20} color="#ffd97d" />
-            <Text style={styles.bottomNavLabel}>SOUND</Text>
+            <MaterialIcons name={isMuted ? 'volume-off' : 'volume-up'} size={20} color={isMuted ? 'rgba(255,217,125,0.4)' : '#ffd97d'} />
+            <Text style={[styles.bottomNavLabel, isMuted && { opacity: 0.4 }]}>SOUND</Text>
           </Pressable>
         ) : (
           <>

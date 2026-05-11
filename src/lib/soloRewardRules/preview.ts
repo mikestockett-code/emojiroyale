@@ -7,7 +7,16 @@ import {
 } from './constants';
 import { getSoloRewards } from './rewardEngine';
 import { getRewardKindLabel, pickRewardSticker } from './stickerPicker';
-import type { FreshSoloRewardKind, FreshSoloRewardPreview, FreshSoloRewardWinType } from './types';
+import type { FreshSoloReward, FreshSoloRewardKind, FreshSoloRewardPreview, FreshSoloRewardWinType } from './types';
+
+const ROLL_WIN_POWER_REWARDS: Array<{ kind: FreshSoloRewardKind; stickerId: string; stickerName: string }> = [
+  { kind: 'power', stickerId: 'power-torture-rack', stickerName: 'Torture Rack' },
+  { kind: 'power', stickerId: 'power-clear-row', stickerName: 'Clear Row' },
+  { kind: 'power', stickerId: 'power-clear-column', stickerName: 'Clear Column' },
+  { kind: 'power', stickerId: 'power-remove-emoji', stickerName: 'Remove Emoji' },
+  { kind: 'powerPlus', stickerId: 'power-plus-10-seconds', stickerName: '+10 Seconds' },
+  { kind: 'powerPlus', stickerId: 'power-clock-freeze', stickerName: 'Clock Freeze' },
+];
 
 export function getSoloRewardPreview(
   winType: FreshSoloRewardWinType,
@@ -15,11 +24,31 @@ export function getSoloRewardPreview(
   hasGoldAlbum = false,
   albumPuzzlePieces: AlbumPuzzlePieceCounts = {},
 ): FreshSoloRewardPreview | null {
-  const rewards = getSoloRewards(winType, wagerTier, hasGoldAlbum);
-  const primaryReward = rewards[0];
-  if (!primaryReward) return null;
+  return getSoloRewardPreviews(winType, wagerTier, hasGoldAlbum, albumPuzzlePieces)[0] ?? null;
+}
 
-  if (isAlbumStickerReward(primaryReward.kind) && Math.random() < getBronzePuzzleRewardChance(albumPuzzlePieces)) {
+export function getSoloRewardPreviews(
+  winType: FreshSoloRewardWinType,
+  wagerTier: SoloWagerTier = 'skip',
+  hasGoldAlbum = false,
+  albumPuzzlePieces: AlbumPuzzlePieceCounts = {},
+): FreshSoloRewardPreview[] {
+  const previews = getSoloRewards(winType, wagerTier, hasGoldAlbum)
+    .map((reward) => buildRewardPreview(reward, albumPuzzlePieces))
+    .filter((preview): preview is FreshSoloRewardPreview => preview !== null);
+
+  if (isRollWinType(winType)) {
+    previews.push(getRandomRollWinPowerPreview());
+  }
+
+  return previews;
+}
+
+function buildRewardPreview(
+  reward: FreshSoloReward,
+  albumPuzzlePieces: AlbumPuzzlePieceCounts,
+): FreshSoloRewardPreview | null {
+  if (isAlbumStickerReward(reward.kind) && Math.random() < getBronzePuzzleRewardChance(albumPuzzlePieces)) {
     const puzzleReward = pickMissingBronzePuzzlePiece(albumPuzzlePieces);
     if (puzzleReward) {
       return {
@@ -36,13 +65,27 @@ export function getSoloRewardPreview(
     }
   }
 
-  const sticker = pickRewardSticker(primaryReward.kind);
+  const sticker = pickRewardSticker(reward.kind);
   return {
-    kind: primaryReward.kind,
-    count: primaryReward.count,
+    kind: reward.kind,
+    count: reward.count,
     stickerId: sticker?.id ?? null,
-    stickerName: sticker?.name ?? getRewardKindLabel(primaryReward.kind),
+    stickerName: sticker?.name ?? getRewardKindLabel(reward.kind),
   };
+}
+
+function getRandomRollWinPowerPreview(): FreshSoloRewardPreview {
+  const reward = ROLL_WIN_POWER_REWARDS[Math.floor(Math.random() * ROLL_WIN_POWER_REWARDS.length)];
+  return {
+    kind: reward.kind,
+    count: 1,
+    stickerId: reward.stickerId,
+    stickerName: reward.stickerName,
+  };
+}
+
+function isRollWinType(winType: FreshSoloRewardWinType) {
+  return winType === 'commonRoll' || winType === 'epicRoll' || winType === 'legendaryRoll';
 }
 
 function isAlbumStickerReward(kind: FreshSoloRewardKind) {

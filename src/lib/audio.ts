@@ -28,6 +28,8 @@ export const AUDIO_SOURCES = {
   fourSquare: require('../../assets/sounds/4square.mp3'),
   eraser: require('../../assets/sounds/eraser.mp3'),
   iceFreeze: require('../../assets/sounds/icefreeze.mp3'),
+  jackpot: require('../../assets/sounds/yeah.mp3'),
+  rumble: require('../../assets/sounds/rumble.mp3'),
 } as const;
 
 export type AudioSourceKey = keyof typeof AUDIO_SOURCES;

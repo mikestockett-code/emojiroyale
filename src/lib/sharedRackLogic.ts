@@ -11,6 +11,7 @@ const LEGENDARY_WIN_STICKER_IDS = new Set<StickerId>(LEGENDARY_STICKER_IDS);
 type RackPoolOptions = {
   soloMode?: SoloModeId;
   roundNumber?: number;
+  forceLegendarySet?: boolean;
 };
 
 function shouldBlockLegendarySetStickers(options?: RackPoolOptions) {
@@ -47,7 +48,14 @@ export function pickRandomPlayableStickerId(options?: RackPoolOptions): StickerI
 }
 
 export function createSharedRack(size = RACK_SIZE, options?: RackPoolOptions) {
-  return Array.from({ length: size }, () => pickRandomPlayableStickerId(options));
+  if (!options?.forceLegendarySet) {
+    return Array.from({ length: size }, () => pickRandomPlayableStickerId(options));
+  }
+
+  const guaranteedStickers = shuffle([...LEGENDARY_STICKER_IDS]).slice(0, Math.min(size, LEGENDARY_STICKER_IDS.length));
+  const remainingSlots = Math.max(0, size - guaranteedStickers.length);
+  const randomStickers = Array.from({ length: remainingSlots }, () => pickRandomPlayableStickerId(options));
+  return shuffle([...guaranteedStickers, ...randomStickers]);
 }
 
 export function rerollSharedRack(size = RACK_SIZE, options?: RackPoolOptions) {
@@ -59,4 +67,13 @@ export function createSharedPlayerRacks(size = RACK_SIZE, options?: RackPoolOpti
     player1: createSharedRack(size, options),
     player2: createSharedRack(size, options),
   } satisfies Record<Player, StickerId[]>;
+}
+
+function shuffle<T>(items: T[]) {
+  const nextItems = [...items];
+  for (let index = nextItems.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [nextItems[index], nextItems[swapIndex]] = [nextItems[swapIndex], nextItems[index]];
+  }
+  return nextItems;
 }

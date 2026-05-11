@@ -9,7 +9,7 @@ import { WinningLineOverlay } from './WinningLineOverlay';
 import { PreviewOverlay } from './PreviewOverlay';
 import { StickerRack } from './StickerRack';
 import { PowerSlots } from './PowerSlots';
-import { SoloTopPanel } from './SoloTopPanel';
+import { TopGameArea } from './TopGameArea';
 import { HandoffOverlay } from './HandoffOverlay';
 import { ALL_ONE_COMBO, BG_IMAGE, SCORE_CLOUD, WAGER_CLOUD } from './constants';
 import type { GameAreaProps } from './types';
@@ -62,9 +62,20 @@ export default function GameArea({
   namePlateText,
   timerText,
   isTimerFrozen = false,
+  isTimerStealing = false,
   topRightImageScale = 1,
   topRightImageOffsetX = 0,
   topRightImageOffsetY = 0,
+  topRightThoughtText = null,
+  centerImageOffsetY = 0,
+  namePlateOffsetY = 0,
+  namePlateScale = 1,
+  topScoreValue,
+  topSubLabel,
+  topSubValue,
+  stageText,
+  topRightSubLabel,
+  topRightSubValue,
   layoutScale = 1,
   boardOffsetY = 0,
   powerSlots = [],
@@ -88,7 +99,7 @@ export default function GameArea({
     <View style={{ flex: 1 }}>
       <Image source={BG_IMAGE} resizeMode="stretch" style={{ position: 'absolute', top: 0, left: 0, width, height }} />
 
-      <SoloTopPanel width={width} height={height} topLeftImage={topLeftImage} topRightImage={topRightImage} centerImage={centerImage} namePlateText={namePlateText} timerText={timerText} isTimerFrozen={isTimerFrozen} topRightImageScale={topRightImageScale} topRightImageOffsetX={topRightImageOffsetX} topRightImageOffsetY={topRightImageOffsetY} />
+      <TopGameArea width={width} height={height} topLeftImage={topLeftImage} topRightImage={topRightImage} centerImage={centerImage} namePlateText={namePlateText} timerText={timerText} isTimerFrozen={isTimerFrozen} isTimerStealing={isTimerStealing} topRightImageScale={topRightImageScale} topRightImageOffsetX={topRightImageOffsetX} topRightImageOffsetY={topRightImageOffsetY} topRightThoughtText={topRightThoughtText} centerImageOffsetY={centerImageOffsetY} namePlateOffsetY={namePlateOffsetY} namePlateScale={namePlateScale} topScoreValue={topScoreValue} topSubLabel={topSubLabel} topSubValue={topSubValue} stageText={stageText} topRightSubLabel={topRightSubLabel} topRightSubValue={topRightSubValue} profileName={profileName} />
 
       <Image source={ALL_ONE_COMBO} resizeMode="contain" style={{ position: 'absolute', width: imgWidth, height: imgRenderedHeight * 0.995, left: imgLeft, top: imgTop + height * 0.007 }} />
 

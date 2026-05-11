@@ -8,7 +8,7 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
-import { emojiPageStyles } from '../screens/albumEmojiPageStyles';
+import { albumBookStyles as styles } from '../shared/albumBookStyles';
 import type { AlbumStickerSlot } from './album.types';
 
 type Props = {
@@ -49,21 +49,21 @@ export function AlbumStickerSlotView({ slot }: Props) {
   const dotColor = RARITY_COLORS[slot.scarcityId] ?? '#999';
 
   return (
-    <View style={emojiPageStyles.albumEmojiSlot}>
+    <View style={styles.albumEmojiSlot}>
       <Animated.Text
         style={[
-          emojiPageStyles.albumEmoji,
+          styles.albumEmoji,
           animStyle,
-          !slot.collected && emojiPageStyles.albumEmojiSilhouette,
+          !slot.collected && styles.albumEmojiSilhouette,
         ]}
       >
         {slot.emoji}
       </Animated.Text>
-      <View style={[emojiPageStyles.rarityDot, { backgroundColor: dotColor }]} />
+      <View style={[styles.rarityDot, { backgroundColor: dotColor }]} />
       <Text
         style={[
-          emojiPageStyles.stickerName,
-          !slot.collected && emojiPageStyles.stickerNameHidden,
+          styles.stickerName,
+          !slot.collected && styles.stickerNameHidden,
         ]}
         numberOfLines={1}
       >
