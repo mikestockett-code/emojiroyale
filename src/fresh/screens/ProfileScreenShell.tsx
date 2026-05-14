@@ -7,7 +7,7 @@ type Props = ProfileNavigation & {
   profiles: FreshProfile[];
   activeProfileId: string | null;
   secondaryProfileId: string | null;
-  onCreateProfile: (name: string, avatar: string, color: FreshProfileColor) => { ok: true } | { ok: false; error: string };
+  onCreateProfile: (name: string, avatar: string, color: FreshProfileColor) => { ok: true; profileId: string } | { ok: false; error: string };
   onSetActiveProfile: (profileId: string) => void;
   onSetSecondaryProfile: (profileId: string | null) => void;
   onDeleteProfile: (profileId: string) => void;

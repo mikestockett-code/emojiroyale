@@ -108,7 +108,7 @@ export type AlbumStickerCustomization = {
   backstory?: string;
 };
 
-export type AlbumPuzzleId = 'hiddenSon' | 'goldenPhoenix' | 'fireDragon' | 'battleTodd';
+export type AlbumPuzzleId = 'hiddenSon' | 'goldenPhoenix' | 'fireDragon' | 'battleTodd' | 'battleNico';
 
 export type AlbumPuzzlePieceDefinition = {
   id: string;

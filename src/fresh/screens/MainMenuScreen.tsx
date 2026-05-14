@@ -5,6 +5,7 @@ import HomeScreen from '../../components/game/HomeScreen';
 export default function MainMenuScreen({
   onGoToSoloSubmenu,
   onGoToPassPlaySubmenu,
+  onGoToMultiplayer,
   onGoToBattleSubmenu,
   onGoToAlbum,
   onGoToHowToPlay,
@@ -17,6 +18,7 @@ export default function MainMenuScreen({
     <HomeScreen
       onGoToSolo={onGoToSoloSubmenu}
       onGoToPassPlay={onGoToPassPlaySubmenu}
+      onGoToMultiplayer={onGoToMultiplayer}
       onGoToBattle={onGoToBattleSubmenu}
       onGoToAlbum={onGoToAlbum}
       onGoToHowToPlay={onGoToHowToPlay}

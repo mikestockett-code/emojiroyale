@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Image, Pressable, Text, View } from 'react-native';
 import { getBronzePuzzle } from './albumPuzzleCatalog';
 import { getCollectedPuzzlePieces, getPuzzleCollectedCount } from './albumPuzzleProgress';
-import { albumBookStyles as styles } from '../shared/albumBookStyles';
+import styles from './albumStyles';
 import type { AlbumPuzzleId, AlbumPuzzlePieceCounts } from './album.types';
 
 type Props = {
@@ -25,7 +25,7 @@ export function AlbumPuzzlePageView({ puzzleId, side, albumPuzzlePieces = {} }: 
     <View style={[styles.root, side === 'left' ? styles.leftPage : styles.rightPage]}>
       {isComplete ? (
         <>
-          <Image source={puzzle.completedPageSource} style={styles.completedImage} resizeMode="contain" />
+          <Image source={puzzle.completedPageSource} style={styles.fullImage} resizeMode="contain" />
           {showCompletePrompt && (
             <View style={styles.completePrompt}>
               <View style={styles.completePromptTextWrap}>

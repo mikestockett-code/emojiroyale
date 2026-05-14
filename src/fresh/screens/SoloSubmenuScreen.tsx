@@ -4,12 +4,13 @@
 // This screen intentionally reuses the existing Solo submenu UI,
 // because that UI already matches the desired design.
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Alert } from 'react-native';
 import type { SoloSubmenuNavigation } from '../types/navigation';
 import SoloSubMenu from '../../screens/SoloSubMenu';
 import { useSoloSubmenuState } from '../solo/useSoloSubmenuState';
-import { useAudioContext } from '../audio/AudioContext';
+import { ModePowerSetupScreen } from '../shared/setup/ModePowerSetupScreen';
+import type { FreshSoloSetup } from '../solo/soloSetup.types';
 
 export default function SoloSubmenuScreen({
   onBackToMenu,
@@ -18,7 +19,8 @@ export default function SoloSubmenuScreen({
   activeProfileAvatar,
   activeProfile,
 }: SoloSubmenuNavigation) {
-  const { playSound } = useAudioContext();
+  const [phase, setPhase] = useState<'setup' | 'power'>('setup');
+  const [pendingSetup, setPendingSetup] = useState<FreshSoloSetup | null>(null);
   const {
     selectedMode,
     selectableModeIds,
@@ -27,6 +29,21 @@ export default function SoloSubmenuScreen({
     handleSelectMode,
     buildSoloSetup,
   } = useSoloSubmenuState(activeProfile ?? null);
+
+  if (phase === 'power' && pendingSetup) {
+    return (
+      <ModePowerSetupScreen
+        playerLabel="PICK YOUR POWERS"
+        actionLabel="START GAME"
+        p1Profile={activeProfile ?? null}
+        initialSlots={{ slot1: null, slot2: null }}
+        onBack={() => setPhase('setup')}
+        onConfirm={(loadout) => {
+          onStartSoloGame({ ...pendingSetup, powerSlotIds: loadout });
+        }}
+      />
+    );
+  }
 
   return (
     <SoloSubMenu
@@ -37,8 +54,8 @@ export default function SoloSubmenuScreen({
           Alert.alert('Not Enough Stickers', startMessage ?? 'You do not qualify for this mode yet.');
           return;
         }
-        playSound('rumble');
-        onStartSoloGame(setup);
+        setPendingSetup(setup);
+        setPhase('power');
       }}
       onOpenProfiles={onOpenProfiles}
       profileAvatar={activeProfileAvatar}

@@ -6,6 +6,7 @@ export type FreshBattleSetup = {
   playerProfileId: string | null;
   cpuId?: BattleCpuId;
   stageNumber?: BattleJourneyStageNumber;
+  startingDifficulty?: number;
   powerSlotIds: {
     slot1: BattlePowerId | null;
     slot2: BattlePowerId | null;

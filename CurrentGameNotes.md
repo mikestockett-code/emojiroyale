@@ -1,307 +1,229 @@
 # Current Game Notes
 
-## Core Problem
+## Mental Model
 
-We have 3 game modes:
+The game now has four mode families:
 
 - Solo
-- Battle
 - Pass & Play
+- Battle
+- Online Multiplayer
 
-They are all the same game at the core. The project should not rebuild board/rack/dice/power/win/animation logic inside each mode.
+They are mostly the same game with different policy on top. The shared core should own board, rack, roll, power, win, layout, setup, and common UI structure. Mode files should only own the real differences: rewards, CPU behavior, handoff, Firebase relay, story stages, and profile/wager policy.
 
-The right mental model:
+Before adding a new mode-specific file, check whether the job already belongs to a shared primitive.
 
-- We are making 3 pizzas.
-- The dough, sauce, cheese, oven, cutter, and pan are shared.
-- Only the toppings are different.
+## Shared Structure
 
-In code:
+### Top-Level Routing
 
-- Shared game systems should be used by every mode.
-- Mode files should only contain mode-specific toppings.
+- `src/fresh/app/AppRouter.tsx`
+  - Chooses which screen to render.
+  - Passes profiles, reward callbacks, and navigation callbacks.
+  - Keeps the multiplayer room controller because lobby and online game share it.
 
-## Shared Systems That Should Stay Shared
+- `src/fresh/app/useModeRouteState.ts`
+  - Owns route-adjacent setup state:
+    - `soloSetup`
+    - `passPlaySetup`
+    - `battleSetup`
+    - battle journey stage/cpu
+    - pass-play entry mode
+    - profile return route
 
-These are the shared ingredients:
+### Submenus And Setup
 
-- Board engine
-- Rack logic
-- Dice logic
-- Roll flow
-- Win detection
-- EP1 effects and animations
-- Power slot usage
-- In-game power press behavior
-- Result overlay
-- Jackpot overlay
-- Game visual layout
-- Game area/playfield renderer
-- Bottom nav
+- `src/fresh/shared/submenu/CarouselSubmenuScreen.tsx`
+  - Shared carousel submenu shell for Solo and Pass & Play.
+  - Handles background, deck area, dots, start button, and validation/status message.
 
-## Current Shared Files / Meaning
+- `src/fresh/shared/setup/ModePowerSetupScreen.tsx`
+  - Shared mode-facing power setup entry point.
+  - Solo, Pass & Play, Battle, and Multiplayer should use this instead of importing `PassPlayPowerScreen` directly.
+  - Owns shared power setup header, confirm sound behavior, and profile casting boundary.
 
-### Gameplay Logic
+- `src/components/game/power-setup/PassPlayPowerScreen.tsx`
+  - Generic power-pick screen implementation.
+  - Uses `PowerScreenLayout`.
+  - Despite the name, this is no longer Pass & Play-only.
+
+- `src/components/game/power-setup/PowerScreenLayout.tsx`
+  - Visual layout for power selection.
+  - Supports EP1-only or EP1 + EPI via `allowEpi`.
+
+- `src/fresh/shared/SharedSubmenuShell.tsx`
+  - Shared background shell.
+
+- `src/fresh/shared/SharedBottomNav.tsx`
+  - Shared bottom nav/profile HUD row.
+
+### Board And Power Core
 
 - `src/hooks/useGameBoard.ts`
   - Shared board engine.
-  - Handles board state, rack state, selected emoji, placing tiles, roll flow hookup, targeted EP1 power coordination, EP1 display state.
-  - This is not a visual layout file.
+  - Owns board state, racks, selected rack index, selected power slot, roll flow hookup, tile placement, rack reroll, EP1 effect display state, and board reset.
 
-- `src/lib/diceLogic.ts`
-  - Shared dice cell/build/apply logic.
+- `src/hooks/useModeBoardController.ts`
+  - Shared mode-facing board/power controller.
+  - Wraps `useGameBoard`, `useGamePowerSlots`, `useGamePowerPress`, and power slot mapping.
+  - Used by Solo, Pass & Play, Battle, and Online host path.
+  - This is the first place to look before adding board/power wiring to a mode.
+
+- `src/hooks/useGamePowerSlots.ts`
+  - Converts selected power loadouts into live in-game power slot data and usage counts.
+
+- `src/hooks/useGamePowerPress.ts`
+  - Shared in-game power button behavior.
 
 - `src/hooks/useRollFlow.ts`
   - Shared roll interaction/preview/animation flow.
 
-- `src/lib/winDetection.ts`
-  - Shared win detection.
-
-- `src/lib/gameBoardEffects.ts`
-  - Shared EP1 board-effect math: row clear, column clear, eraser, random EP1, effect event data.
-
-- `src/lib/battlePowerEffects.ts`
-  - Shared board powers for four-square and tornado.
-  - Name is misleading because these powers are used outside Battle too.
+- `src/lib/diceLogic.ts`
+  - Shared dice cell creation/application.
 
 - `src/lib/sharedRackLogic.ts`
-  - Shared rack creation.
+  - Shared rack generation.
 
-### Power Logic
+- `src/lib/winDetection.ts`
+  - Shared board win detection.
 
-- `src/components/power-selection/usePowerSlots.ts`
-  - Setup-screen selection of power slots.
-  - Used before the game starts.
+- `src/lib/roundResult.ts`
+  - Shared pure winner/result helpers:
+    - display title
+    - result type/tier
+    - winner sound mapping
+    - epic/legendary check
 
-- `src/hooks/useEP1Powers.ts`
-  - EP1 usage counts.
-
-- `src/hooks/useEpiPowers.ts`
-  - EPI usage counts.
-
-- `src/hooks/useGamePowerSlots.ts`
-  - Turns selected power IDs into live in-game slot data.
-
-- `src/hooks/useGamePowerPress.ts`
-  - Shared in-game power button/tap behavior.
-  - This should be used by modes instead of each mode hand-writing four-square/tornado/consume/clear-selected behavior.
-
-### Visual Game Area
+### Game Screen Rendering
 
 - `src/fresh/shared/GameModeScreenShell.tsx`
-  - Shared outer wrapper for game screens.
-  - Renders one `FreshGameArea`.
-  - Renders shared jackpot overlay.
-  - Mode-specific overlays are children.
+  - Shared game-screen wrapper.
+  - Renders `FreshGameArea` and shared overlays.
 
 - `src/fresh/shared/FreshGameArea.tsx`
-  - Adapter between mode screens and `GameArea`.
-  - Wires roll flow to board presses and preview props.
+  - Adapter from mode state to the visual `GameArea`.
 
 - `src/components/game/GameArea/GameArea.tsx`
   - Shared playfield composer.
-  - Places the top panel, board art, board renderer, win line, EP1 overlay, preview overlay, rack, power slots, bottom nav, and handoff overlay.
-  - It should not contain gameplay rules.
+  - Should not contain gameplay rules.
 
 - `src/components/game/GameArea/useGameLayout.ts`
-  - Visual placement map only.
-  - Calculates board/rack/background coordinates and cell positions.
-  - This is board placement/geometry, not board game logic.
+  - Board/rack/background geometry only.
 
-- `src/components/game/GameArea/GameBoard.tsx`
-  - Shared board renderer.
+## Mode Responsibilities
 
-## Correct Architecture Rule
+### Solo
 
-### Screens
-
-Game screens should render through:
-
-- `GameModeScreenShell`
-- `FreshGameArea`
-
-Examples:
-
-- `src/fresh/screens/SoloGameScreen.tsx`
-- `src/fresh/screens/BattleGameScreen.tsx`
-- `src/fresh/screens/PassPlayGameScreen.tsx`
-
-These screens should mostly:
-
-- call the mode state hook
-- build labels/colors/view props
-- render shared game shell
-- render mode-specific result overlay/buttons
-
-### State Hooks
-
-State hooks should not render `FreshGameArea`.
-
-State hooks should use shared logic hooks:
-
-- `useGameBoard`
-- `useRollFlow` through `useGameBoard`
-- `useSoloCpu` or future shared CPU hook
-- `useGamePowerSlots`
-- `useGamePowerPress`
-- shared reward helpers
-- shared win detection
-
-Examples:
+Main files:
 
 - `src/hooks/useSoloGameState.ts`
-- `src/fresh/battle/useBattleGameState.ts`
+- `src/hooks/solo/useSoloRound.ts`
+- `src/hooks/solo/useSoloRolls.ts`
+- `src/hooks/solo/useSoloRewards.ts`
+- `src/hooks/solo/useSoloWinHandler.ts`
+- `src/fresh/solo/soloSubmenuValidation.ts`
+- `src/fresh/solo/soloWagerFactory.ts`
+
+Solo owns:
+
+- Solo wager policy
+- Solo reward policy
+- Solo high score hooks
+- Solo CPU difficulty
+- Solo CPU EP1 behavior
+- Solo result overlay state
+
+Solo should not reimplement board/power/rack/roll behavior.
+
+### Pass & Play
+
+Main files:
+
 - `src/fresh/screens/passplay/usePassPlayGameState.ts`
+- `src/fresh/passplay/usePassPlaySubmenu.ts`
+- `src/fresh/passplay/passPlaySubmenuValidation.ts`
 
-## Desired Next Architecture
+Pass & Play owns:
 
-We likely need:
+- Two human profiles
+- Handoff overlay/timing
+- P1/P2 wager sticker payout
+- Golden Phoenix holder rules
 
-`src/hooks/useCpuGameStateCore.ts`
+Pass & Play should share board/power/wager inventory helpers.
 
-This would be shared by Solo and Battle because both are human-vs-CPU modes.
+### Battle
 
-Shared CPU-mode core should own:
+Main files:
 
-- player1/player2 turn switching
-- shared `useGameBoard` setup
-- CPU hook wiring
-- CPU thinking state
-- shared roll counters if possible
-- shared win check handoff points
-- shared board reset for next round
+- `src/fresh/battle/useBattleGameState.ts`
+- `src/fresh/battle/useBattleRewards.ts`
+- `src/fresh/battle/useBattleScore.ts`
+- `src/fresh/battle/useToddNervousMistake.ts`
+- `src/fresh/battle/useNicoBehavior.ts`
+- `src/fresh/battle/battleCpuConfig.ts`
 
-Then:
+Battle owns:
 
-### `useSoloGameState`
+- Story/stage CPU policy
+- Todd/Nico behavior
+- Timer and timer EPI behavior
+- Battle score to 2000
+- Battle stage rewards
 
-Should only add Solo toppings:
+Do not merge Battle CPU with Solo CPU yet. They share board systems, but CPU policy is still mode-specific.
 
-- solo wager
-- solo rewards
-- solo result overlay state/text
-- high score/safe score support
+### Online Multiplayer
 
-### `useBattleGameState`
+Main files:
 
-Should only add Battle toppings:
+- `src/multiplayer/useMultiplayerRoom.ts`
+- `src/multiplayer/useOnlineGame.ts`
+- `src/multiplayer/useGuestMoveRelay.ts`
+- `src/multiplayer/onlineGameViewModel.ts`
+- `src/multiplayer/onlineGameHelpers.ts`
+- `src/multiplayer/roomService.ts`
+- `src/multiplayer/multiplayerTypes.ts`
+- `src/fresh/screens/multiplayer/MultiplayerLobbyScreen.tsx`
+- `src/fresh/screens/multiplayer/OnlineGameScreen.tsx`
 
-- battle timer
-- battle score to 2000
-- Todd/stage CPU difficulty
-- Todd nervous mistake behavior
-- battle rewards/puzzle stage rules
+Online owns:
 
-### `usePassPlayGameState`
+- Firebase room lifecycle
+- Host-authoritative game state
+- Guest move relay
+- Mirrored view model for guest device
+- Room code lobby flow
 
-Different because no CPU. It should still share:
+Online should still use shared board/power setup and shared game rendering. Do not merge Online relay with CPU modes.
 
-- `useGameBoard`
-- `useGamePowerSlots`
-- `useGamePowerPress`
-- shared rewards
-- shared result overlay patterns
+## Wagers And Inventory
 
-Pass & Play toppings:
+- `src/fresh/shared/wagers/wagerInventory.ts`
+  - Shared album-count helpers:
+    - owned sticker checks by tier
+    - random owned sticker picking
+    - Common stack checks/picking
 
-- handoff
-- two human profiles
-- wager payout
-- golden phoenix holder rules
+Use this file before filtering `ALBUM_STICKER_CATALOG` inside mode code.
 
-## Recent Cleanup Already Done
+## Theme And Style Rules
 
-- Added `GameModeScreenShell`.
-- Solo/Battle/Pass game screens now render through shared shell.
-- Added `useGamePowerPress` for shared in-game power press behavior.
-- Battle and Pass & Play use `useGamePowerPress`.
-- Moved Todd nervous state to `useToddNervousMistake`.
-- Moved Battle rewards to `useBattleRewards`.
-- Split `SoloTopPanel` into smaller files:
-  - `SoloTopPanel.tsx`
-  - `SoloTopPanel.styles.ts`
-  - `FrozenClockOverlay.tsx`
-  - `TopPanelThoughtBubble.tsx`
-  - `topPanelLayout.ts`
-- Moved Solo screen-only pieces out of `SoloGameScreen`:
-  - `SoloEp1StatusPill.tsx`
-  - `DevWizardJackpotButton.tsx`
-  - `useDevWizardJackpot.ts`
-  - `useSoloLossHighScore.ts`
-- Collapsed duplicate Pass & Play power setup screens into one:
-  - `PassPlayPowerScreen.tsx`
-- Deleted duplicate:
-  - `PassPlayPowerP1Screen.tsx`
-  - `PassPlayPowerP2Screen.tsx`
+- Use `src/fresh/shared/luxuryTheme.ts` for shared tokens.
+- Use shared components for repeated layout:
+  - `SharedSubmenuShell`
+  - `SharedBottomNav`
+  - `CarouselSubmenuScreen`
+  - `ModePowerSetupScreen`
+  - `GameModeScreenShell`
+- Do not bring back `src/fresh/shared/submenuStyles.ts` as a broad bucket.
+- Do not create new mode-specific style files unless there is a real visual difference.
 
-## Current Concern
+## Current Guardrails
 
-`useBattleGameState.ts` is still too big for how young Battle mode is.
+- Do not merge Solo CPU, Battle CPU, and Online relay.
+- Do not create one giant reward engine.
+- Do not redesign submenus visually during code-shape refactors.
+- Do not duplicate board logic, rack logic, roll logic, win detection, EP1 animation, power press behavior, result overlays, or reward preview display.
+- Run `npx tsc --noEmit` after meaningful refactors.
 
-Reason:
-
-- Battle has CPU wiring, timer, score, powers, rewards, Todd behavior, reset, and win handling all in one file.
-- Solo already has smaller helper hooks.
-- Battle should mirror Solo’s structure more.
-
-The next safe cleanup is not to add more Battle-only hooks randomly.
-
-The next safe cleanup is to identify what Solo and Battle both do, then create a shared CPU-mode core hook.
-
-## Important Rule For Future AI
-
-Before adding a new file or new mode-specific logic, check if the behavior already exists in shared systems.
-
-Do not create a Battle-only or Solo-only version of:
-
-- board logic
-- rack logic
-- dice logic
-- roll logic
-- win detection
-- EP1 animation
-- power press behavior
-- result overlay
-- reward preview display
-
-Only create mode-specific code for actual toppings:
-
-- Solo wager/reward policy
-- Battle story/stage/Todd policy
-- Pass & Play handoff/two-player/wager policy
-
-old board import { useWindowDimensions } from 'react-native';
-
-export function useGameLayout(layoutScale = 1, verticalOffset = 0) {
-  const { width, height } = useWindowDimensions();
-
-  const imgWidth          = width * 1.19 * layoutScale;
-  const imgRenderedHeight = imgWidth * 1.5;
-  const imgTop            = height * 0.12 + (height - imgRenderedHeight) / 2 + height * verticalOffset;
-  const imgLeft           = -(imgWidth - width) / 2;
-  const rackPadTop        = imgTop + imgRenderedHeight * 0.6746 - height * 0.012;
-  const anchorX           = imgLeft + imgWidth * 0.508 - width * 0.01;
-  const anchorY           = imgTop + imgRenderedHeight * 0.3696 + height * 0.015;
-  const cellSpacing       = imgWidth * 0.122;
-  const cellSize          = cellSpacing * 0.88;
-
-  const colXOffsets = [width * 0.026, width * 0.01, 0, -width * 0.013, -width * 0.027];
-  const rowYOffsets = [height * 0.018, height * 0.01, 0, -height * 0.005, -height * 0.012];
-
-  const boardCells = Array.from({ length: 25 }, (_, i) => {
-    const col = i % 5;
-    const row = Math.floor(i / 5);
-    return {
-      x: anchorX + (col - 2) * cellSpacing + colXOffsets[col],
-      y: anchorY + (row - 2) * cellSpacing + rowYOffsets[row],
-    };
-  });
-
-  return {
-    width, height,
-    imgWidth, imgRenderedHeight, imgTop, imgLeft,
-    rackPadTop,
-    anchorX, anchorY, cellSize,
-    boardCells,
-  };
-}

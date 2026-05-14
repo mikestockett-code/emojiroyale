@@ -5,6 +5,9 @@ import { PowerCard } from './PowerCard';
 import type { PowerConfig } from './ep1Config';
 import { cardStyles } from './powerCardStyles';
 
+// Testing mode: keep all power cards selectable until album-based unlock rules are final.
+const UNLOCK_ALL_POWERS_FOR_TESTING = true;
+
 type PowerSectionRow = {
   cards: PowerConfig[];
   marginTop?: number;
@@ -17,8 +20,7 @@ type Props = {
   slot1: BattlePowerId | null;
   slot2: BattlePowerId | null;
   albumCounts?: Record<string, number>;
-  onSelect: (id: BattlePowerId) => void;
-  onRemove: (id: BattlePowerId) => void;
+  onAssignSlot: (slotId: 'slot1' | 'slot2', id: BattlePowerId | null) => void;
   headerMarginTop?: number;
   cardSize?: number;
 };
@@ -30,14 +32,13 @@ export function PowerSection({
   slot1,
   slot2,
   albumCounts,
-  onSelect,
-  onRemove,
+  onAssignSlot,
   headerMarginTop,
   cardSize,
 }: Props) {
-  const bothFull = slot1 !== null && slot2 !== null;
-  const isSelected = (id: BattlePowerId) => slot1 === id || slot2 === id;
-  const isOwned = (id: BattlePowerId) => (albumCounts ? (albumCounts[id] ?? 0) > 0 : true);
+  const isOwned = (id: BattlePowerId) => (
+    UNLOCK_ALL_POWERS_FOR_TESTING || (albumCounts ? (albumCounts[id] ?? 0) > 0 : true)
+  );
 
   return (
     <>
@@ -50,19 +51,32 @@ export function PowerSection({
           key={rowIndex}
           style={[cardStyles.cardRow, row.marginTop ? { marginTop: row.marginTop } : null]}
         >
-          {row.cards.map((power) => (
-            <PowerCard
-              key={power.powerId}
-              imageSource={power.imageSource}
-              label={power.label}
-              isSelected={isSelected(power.powerId)}
-              isOwned={isOwned(power.powerId)}
-              canAdd={!bothFull}
-              onSelect={() => onSelect(power.powerId)}
-              onRemove={() => onRemove(power.powerId)}
-              cardSize={cardSize}
-            />
-          ))}
+          {row.cards.map((power) => {
+            const id = power.powerId;
+            const isInSlot1 = slot1 === id;
+            const isInSlot2 = slot2 === id;
+            return (
+              <PowerCard
+                key={id}
+                imageSource={power.imageSource}
+                label={power.label}
+                isInSlot1={isInSlot1}
+                isInSlot2={isInSlot2}
+                slot1Free={slot1 === null}
+                slot2Free={slot2 === null}
+                isOwned={isOwned(id)}
+                onPressLeft={() => {
+                  if (isInSlot1) onAssignSlot('slot1', null);
+                  else if (slot1 === null) onAssignSlot('slot1', id);
+                }}
+                onPressRight={() => {
+                  if (isInSlot2) onAssignSlot('slot2', null);
+                  else if (slot2 === null) onAssignSlot('slot2', id);
+                }}
+                cardSize={cardSize}
+              />
+            );
+          })}
         </View>
       ))}
     </>

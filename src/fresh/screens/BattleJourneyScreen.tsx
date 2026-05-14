@@ -5,16 +5,27 @@ import { GildedButton } from '../shared/GameResultOverlay/GildedButton';
 import { SharedBottomNav } from '../shared/SharedBottomNav';
 import { SharedSubmenuShell } from '../shared/SharedSubmenuShell';
 import { useBattleJourneyState } from '../battle/useBattleJourneyState';
+import type { BattleJourneyCpuId } from '../battle/useBattleJourneyState';
 import type { FreshProfile } from '../profile/types';
-import { submenuStyles as styles } from '../shared/submenuStyles';
+import { styles } from './BattleJourneyScreen.styles';
 import type { BattleJourneyStageNumber } from '../battle/battleRewardRules';
 
 const BG = require('../../../assets/backgrounds/sharedbackgroundpurplegrad.png');
 const INTRO_PAGE = require('../../../assets/albumgeneralstuff/albumbooks/battle_mode_full_pages_not_puzzle/battle_mode_full_pages/intro_full_page.png');
 
+const CPU_IMAGES: Record<BattleJourneyCpuId, any> = {
+  todd: require('../../../assets/BattleModeCpuEgos/todd.png'),
+  nico: require('../../../assets/CustomEmojis/nico_non_alpha_emoji.png'),
+};
+
+const CPU_NAMES: Record<BattleJourneyCpuId, string> = {
+  todd: 'Todd Awaits',
+  nico: 'Nico Awaits',
+};
+
 type Props = {
   onBackToMenu: () => void;
-  onProceedToSetup: (stageNumber: BattleJourneyStageNumber) => void;
+  onProceedToSetup: (stageNumber: BattleJourneyStageNumber, cpuId: BattleJourneyCpuId) => void;
   activeProfile?: FreshProfile | null;
 };
 
@@ -30,16 +41,17 @@ export default function BattleJourneyScreen({ onBackToMenu, onProceedToSetup, ac
     restartStageOne,
   } = useBattleJourneyState();
 
-  const stageLabel = save ? `Todd - Stage ${save.stageNumber}` : 'Todd - Stage 1';
+  const currentCpuId: BattleJourneyCpuId = save?.cpuId ?? 'todd';
+  const stageLabel = `${currentCpuId === 'todd' ? 'Todd' : 'Nico'} - Stage ${save?.stageNumber ?? 1}`;
 
   const beginJourney = async () => {
     await startStageOne();
-    onProceedToSetup(1);
+    onProceedToSetup(1, 'todd');
   };
 
   const continueJourney = () => {
-    if (!hasSave) return;
-    onProceedToSetup(save?.stageNumber ?? 1);
+    if (!hasSave || !save) return;
+    onProceedToSetup(save.stageNumber, save.cpuId);
   };
 
   const handleRestartStageOne = async () => {
@@ -68,11 +80,11 @@ export default function BattleJourneyScreen({ onBackToMenu, onProceedToSetup, ac
     >
       <View style={[styles.journeyContent, { paddingTop: insets.top + 36 }]}>
         <Text style={styles.setupEyebrow}>BATTLE JOURNEY</Text>
-        <Text style={styles.journeyTitle}>Todd Awaits</Text>
+        <Text style={styles.journeyTitle}>{CPU_NAMES[currentCpuId]}</Text>
         <Text style={styles.journeyStageText}>{stageLabel}</Text>
 
         <View style={styles.journeyCpuFrame}>
-          <Image source={require('../../../assets/BattleModeCpuEgos/todd.png')} style={styles.journeyCpuImage} resizeMode="contain" />
+          <Image source={CPU_IMAGES[currentCpuId]} style={styles.journeyCpuImage} resizeMode="contain" />
         </View>
 
         <View style={styles.journeyButtonStack}>

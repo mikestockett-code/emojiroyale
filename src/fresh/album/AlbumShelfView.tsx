@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
 import { Image, Pressable, View } from 'react-native';
 import type { AlbumBookConfig, AlbumBookId, AlbumEraId, AlbumPuzzlePieceCounts } from './album.types';
-import { shelfStyles } from '../screens/albumShelfStyles';
-import { albumBookStyles } from '../shared/albumBookStyles';
+import albumStyles from './albumStyles';
+import { theme } from '../shared/luxuryTheme';
 import { AlbumTierBadge } from '../shared/AlbumTierBadge';
 import { GoldenPhoenixTrophyBadge } from '../shared/GoldenPhoenixTrophyBadge';
 import { useGoldenPhoenixHolder } from '../../hooks/useGoldenPhoenixHolder';
@@ -31,11 +31,11 @@ export function AlbumShelfView({
   );
 
   return (
-    <View style={shelfStyles.shelfGrid}>
+    <View style={{ flex: 1 }}>
       <GoldenPhoenixTrophyBadge
         size="shelf"
         holderName={goldenPhoenixHolderName}
-        style={shelfStyles.shelfGoldenPhoenixTrophy}
+        style={albumStyles.shelfGoldenPhoenixTrophy}
       />
       {books.map((book) => {
         const isActiveEra = ALBUM_ERAS.includes(book.id as AlbumEraId) && book.id === activeEraId;
@@ -43,7 +43,7 @@ export function AlbumShelfView({
           <Pressable
             key={book.id}
             onPress={() => onOpenBook(book.id)}
-            style={({ pressed }) => [shelfStyles.shelfBookButton, getShelfBookPosition(book.id), pressed && albumBookStyles.pressedBook]}
+            style={({ pressed }) => [{ position: 'absolute' }, getShelfBookPosition(book.id), pressed && theme.pressed]}
           >
             <Image source={book.cover} style={getShelfBookCoverStyle(book.id)} resizeMode="contain" />
             {isActiveEra && (
@@ -66,28 +66,28 @@ export function AlbumShelfView({
 
 function getShelfBookPosition(bookId: AlbumBookId) {
   switch (bookId) {
-    case 'favorite':  return shelfStyles.shelfFavorite;
-    case 'bronze':    return shelfStyles.shelfBronze;
-    case 'silver':    return shelfStyles.shelfSilver;
-    case 'gold':      return shelfStyles.shelfGold;
-    case 'platinum':  return shelfStyles.shelfPlatinum;
-    case 'diamond':   return shelfStyles.shelfDiamond;
-    case 'doodle':    return shelfStyles.shelfDoodle;
-    case 'battleMode': return shelfStyles.shelfBattleMode;
-    case 'easterEggs': return shelfStyles.shelfEasterEggs;
+    case 'favorite':  return albumStyles.shelfFavorite;
+    case 'bronze':    return albumStyles.shelfBronze;
+    case 'silver':    return albumStyles.shelfSilver;
+    case 'gold':      return albumStyles.shelfGold;
+    case 'platinum':  return albumStyles.shelfPlatinum;
+    case 'diamond':   return albumStyles.shelfDiamond;
+    case 'doodle':    return albumStyles.shelfDoodle;
+    case 'battleMode': return albumStyles.shelfBattleMode;
+    case 'easterEggs': return albumStyles.shelfEasterEggs;
   }
 }
 
 function getShelfBookCoverStyle(bookId: AlbumBookId) {
   switch (bookId) {
-    case 'favorite':  return shelfStyles.favoriteBookCover;
-    case 'bronze':    return shelfStyles.bronzeBookCover;
-    case 'silver':    return shelfStyles.silverBookCover;
-    case 'gold':      return shelfStyles.goldBookCover;
-    case 'platinum':  return shelfStyles.platinumBookCover;
-    case 'diamond':   return shelfStyles.diamondBookCover;
-    case 'doodle':    return shelfStyles.doodleBookCover;
-    case 'battleMode': return shelfStyles.battleModeBookCover;
-    case 'easterEggs': return shelfStyles.easterEggsBookCover;
+    case 'favorite':  return albumStyles.favoriteBookCover;
+    case 'bronze':    return albumStyles.bronzeBookCover;
+    case 'silver':    return albumStyles.silverBookCover;
+    case 'gold':      return albumStyles.goldBookCover;
+    case 'platinum':  return albumStyles.platinumBookCover;
+    case 'diamond':   return albumStyles.diamondBookCover;
+    case 'doodle':    return albumStyles.doodleBookCover;
+    case 'battleMode': return albumStyles.battleModeBookCover;
+    case 'easterEggs': return albumStyles.easterEggsBookCover;
   }
 }

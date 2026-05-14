@@ -21,6 +21,7 @@ export type BackToMenu = () => void;
 export type MainMenuNavigation = {
   onGoToSoloSubmenu: () => void;
   onGoToPassPlaySubmenu: () => void;
+  onGoToMultiplayer: () => void;
   onGoToBattleSubmenu: () => void;
   onGoToAlbum: () => void;
   onGoToHowToPlay: () => void;
@@ -59,8 +60,8 @@ export type GameScreenNavigation = {
 
 export type BattleGameNavigation = {
   onBackToMenu: () => void;
-  onReloadBattle: () => void;
-  onNextBattleStage: () => void;
+  onReloadBattle: (startingDifficulty?: number) => void;
+  onNextBattleStage: (startingDifficulty?: number) => void;
   battleSetup: FreshBattleSetup;
   activeProfile?: FreshProfile | null;
   onGrantAlbumSticker?: (profileId: string | null | undefined, stickerId: StickerId, count?: number) => void;

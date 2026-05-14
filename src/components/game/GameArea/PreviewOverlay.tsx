@@ -37,13 +37,14 @@ export function PreviewOverlay({
   if (
     !isRollMode ||
     !previewStickerId ||
-    !previewOwner ||
     !previewScale ||
     !previewOpacity ||
     !previewFlashOpacity ||
     !previewRotationDeg ||
     !onPreviewPress
   ) return null;
+
+  const previewColor = previewOwner ? playerColors[previewOwner] : '#f59e0b';
 
   return (
     <Animated.View
@@ -88,14 +89,14 @@ export function PreviewOverlay({
             aspectRatio: 1,
             borderRadius: 999,
             overflow: 'hidden',
-            backgroundColor: playerColors[previewOwner],
+            backgroundColor: previewColor,
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
           <StickerTile
             stickerId={previewStickerId}
-            backgroundColor={playerColors[previewOwner]}
+            backgroundColor={previewColor}
             isBoardTile
             variant="naked"
           />
@@ -105,7 +106,7 @@ export function PreviewOverlay({
         style={{
           position: 'absolute',
           inset: 0,
-          backgroundColor: playerColors[previewOwner],
+          backgroundColor: previewColor,
           opacity: previewFlashOpacity,
           borderRadius: 999,
         }}

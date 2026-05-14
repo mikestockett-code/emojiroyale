@@ -1,7 +1,8 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Image, PanResponder, Pressable, Text, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { albumBookStyles as styles } from '../shared/albumBookStyles';
+import styles from './albumStyles';
+import { theme } from '../shared/luxuryTheme';
 import { useAudioContext } from '../audio/AudioContext';
 import { useAlbumBookNavigation } from './hooks/useAlbumBookNavigation';
 import { AlbumBookFlipperView } from './AlbumBookFlipperView';
@@ -109,28 +110,28 @@ export function AlbumSubBookView({
       : 1;
 
     return (
-      <View style={styles.openBookRoot}>
+      <View style={{ flex: 1 }}>
         <Pressable
           onPress={onBackToShelf}
-          style={({ pressed }) => [styles.closeBookButton, pressed && styles.pressedBook]}
+          style={({ pressed }) => [styles.closeBookButton, pressed && theme.pressed]}
         >
           <MaterialIcons name="keyboard-arrow-left" size={24} color="#ffe3a3" />
         </Pressable>
 
         <View style={styles.battleSinglePageWrap} {...battleSwipePanResponder.panHandlers}>
-          <Image source={currentBattlePage.source} style={styles.battleSinglePageImage} resizeMode="cover" />
+          <Image source={currentBattlePage.source} style={styles.fullImage} resizeMode="cover" />
           {revealPercent < 1 ? (
             <>
-              <View style={styles.battlePageFog} />
+              <View style={styles.blackOverlay} />
               <View style={[styles.battlePageReveal, { height: `${Math.max(8, revealPercent * 100)}%` }]}>
-                <Image source={currentBattlePage.source} style={styles.battleSinglePageImage} resizeMode="cover" />
+                <Image source={currentBattlePage.source} style={styles.fullImage} resizeMode="cover" />
               </View>
               <Text style={styles.battlePageLockedText}>{Math.round(revealPercent * 100)}% REVEALED</Text>
             </>
           ) : null}
           {currentBattlePage.locked ? (
             <>
-              <View style={styles.battlePageLockedOverlay} />
+              <View style={styles.blackOverlay} />
               <Text style={styles.battlePageLockedText}>LOCKED</Text>
             </>
           ) : null}
@@ -143,7 +144,7 @@ export function AlbumSubBookView({
             style={({ pressed }) => [
               styles.pageButton,
               !canGoBattlePrev && styles.disabledButton,
-              pressed && styles.pressedBook,
+              pressed && theme.pressed,
             ]}
           >
             <MaterialIcons name="chevron-left" size={24} color="#ffe3a3" />
@@ -155,7 +156,7 @@ export function AlbumSubBookView({
             style={({ pressed }) => [
               styles.pageButton,
               !canGoBattleNext && styles.disabledButton,
-              pressed && styles.pressedBook,
+              pressed && theme.pressed,
             ]}
           >
             <MaterialIcons name="chevron-right" size={24} color="#ffe3a3" />
@@ -166,10 +167,10 @@ export function AlbumSubBookView({
   }
 
   return (
-    <View style={styles.openBookRoot}>
+    <View style={{ flex: 1 }}>
       <Pressable
         onPress={onBackToShelf}
-        style={({ pressed }) => [styles.closeBookButton, pressed && styles.pressedBook]}
+        style={({ pressed }) => [styles.closeBookButton, pressed && theme.pressed]}
       >
         <MaterialIcons name="keyboard-arrow-left" size={24} color="#ffe3a3" />
       </Pressable>
@@ -218,7 +219,7 @@ export function AlbumSubBookView({
           style={({ pressed }) => [
             styles.pageButton,
             !canGoPrev && styles.disabledButton,
-            pressed && styles.pressedBook,
+            pressed && theme.pressed,
           ]}
         >
           <MaterialIcons name="chevron-left" size={24} color="#ffe3a3" />
@@ -230,7 +231,7 @@ export function AlbumSubBookView({
           style={({ pressed }) => [
             styles.pageButton,
             !canGoNext && styles.disabledButton,
-            pressed && styles.pressedBook,
+            pressed && theme.pressed,
           ]}
         >
           <MaterialIcons name="chevron-right" size={24} color="#ffe3a3" />

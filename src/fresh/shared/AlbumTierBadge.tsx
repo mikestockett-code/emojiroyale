@@ -1,14 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { AlbumEraId } from '../album/album.types';
-
-const TIER_COLOR: Record<AlbumEraId, string> = {
-  bronze: '#cd7f32',
-  silver: '#c0c0c0',
-  gold: '#ffd700',
-  platinum: '#e8e6e0',
-  diamond: '#7df9ff',
-};
+import { ALBUM_TIER_COLORS } from './luxuryTheme';
 
 type Props = {
   eraId: AlbumEraId;
@@ -25,7 +18,7 @@ export function AlbumTierBadge({
   percentComplete,
   compact = false,
 }: Props) {
-  const color = TIER_COLOR[eraId];
+  const color = ALBUM_TIER_COLORS[eraId];
   const label = eraId.charAt(0).toUpperCase() + eraId.slice(1);
 
   if (compact) {

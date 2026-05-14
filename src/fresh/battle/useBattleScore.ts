@@ -9,8 +9,8 @@ export function useBattleScore() {
   const [cpuBattleScore, setCpuBattleScore] = useState(0);
   const [battleOver, setBattleOver] = useState(false);
 
-  const applyRoundWinScore = useCallback((winner: NonNullable<WinnerInfo>, wasRollWin = false) => {
-    const roundScore = getScoreForWinner(winner, wasRollWin);
+  const applyRoundWinScore = useCallback((winner: NonNullable<WinnerInfo>, wasRollWin = false, wasTornadoWin = false) => {
+    const roundScore = getScoreForWinner(winner, wasRollWin, wasTornadoWin);
     const winnerPlayer: Player = winner.player;
     const setScore = winnerPlayer === 'player1' ? setPlayerBattleScore : setCpuBattleScore;
     setScore((prev) => {

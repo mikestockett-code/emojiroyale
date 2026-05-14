@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import { Animated, View } from 'react-native';
 import type { ResultTier } from './constants';
 import { TIER } from './constants';
+import { theme } from '../luxuryTheme';
 
 type Particle = {
   color: string;
@@ -47,7 +48,7 @@ function ConfettiParticle({ color, startLeft, delay, size, drift, fall, spin, ro
 export function Confetti({ tier }: { tier: ResultTier }) {
   const cfg = TIER[tier];
   const particles = useMemo(() => {
-    const palette = [cfg.ring, '#ffd86b', '#fff4a3', '#ffae2b', '#ffffff', '#f8c6ff'];
+    const palette = [cfg.ring, theme.gold, '#fff4a3', '#ffae2b', '#ffffff', '#f8c6ff'];
     return Array.from({ length: 44 }, (_, i) => ({
       color: palette[i % palette.length],
       startLeft: 3 + ((i * 17) % 94),

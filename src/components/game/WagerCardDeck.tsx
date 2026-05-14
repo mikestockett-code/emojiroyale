@@ -1,10 +1,10 @@
 import React from 'react';
 import { SwipeCardDeck } from './SwipeCardDeck';
 
-const WAGER_CARDS = [
-  { id: 'none', cardImg: require('../../../assets/Cards/NoWager.png'), glowColor: '#22c55e', borderColor: '#4ade80' },
-  { id: 'epic', cardImg: require('../../../assets/Cards/EpicWagerCard.png'), glowColor: '#3b82f6', borderColor: '#60a5fa' },
-  { id: 'legendary', cardImg: require('../../../assets/Cards/LegendaryNormal.png'), glowColor: '#a855f7', borderColor: '#c084fc' },
+export const WAGER_CARDS = [
+  { id: 'none',      emoji: null,  cardImg: require('../../../assets/Cards/NoWager.png'),       glowColor: '#22c55e', borderColor: '#4ade80' },
+  { id: 'epic',      emoji: '💎',  cardImg: require('../../../assets/Cards/EpicWagerCard.png'), glowColor: '#3b82f6', borderColor: '#60a5fa' },
+  { id: 'legendary', emoji: '👑',  cardImg: require('../../../assets/Cards/LegendaryNormal.png'), glowColor: '#a855f7', borderColor: '#c084fc' },
 ];
 
 const GOLDEN_PHOENIX_WAGER_CARDS = [

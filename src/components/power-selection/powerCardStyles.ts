@@ -1,4 +1,5 @@
 import { Dimensions, StyleSheet } from 'react-native';
+import { theme } from '../../fresh/shared/luxuryTheme';
 
 const W = Dimensions.get('window').width;
 export const CARD_SIZE     = (W - 20) / 3 * 0.9;
@@ -17,7 +18,7 @@ export const cardStyles = StyleSheet.create({
     height: CARD_SIZE * 0.75,
     borderRadius: 12,
     overflow: 'hidden',
-    shadowColor: '#7B2FBE',
+    shadowColor: theme.purpleAccent,
     shadowOpacity: 0.4,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
@@ -30,18 +31,23 @@ export const cardStyles = StyleSheet.create({
   badge: {
     position: 'absolute',
     bottom: 6,
-    right: 6,
     width: 28,
     height: 28,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: '#ffd700',
+    borderColor: theme.gold,
     shadowColor: '#000',
     shadowOpacity: 0.5,
     shadowRadius: 4,
     elevation: 4,
+  },
+  badgeLeft: {
+    left: 6,
+  },
+  badgeRight: {
+    right: 6,
   },
   badgeAdd: {
     backgroundColor: '#1a6e2e',
@@ -60,7 +66,7 @@ export const cardStyles = StyleSheet.create({
     marginTop: -1,
   },
   cardLabel: {
-    color: '#ffd700',
+    color: theme.gold,
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 0.5,
@@ -81,7 +87,7 @@ export const cardStyles = StyleSheet.create({
     marginBottom: 6,
   },
   sectionLabel: {
-    color: '#ffd700',
+    color: theme.gold,
     fontSize: 13,
     fontWeight: '900',
     letterSpacing: 2,

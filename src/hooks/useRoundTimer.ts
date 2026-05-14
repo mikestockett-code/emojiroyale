@@ -6,7 +6,7 @@ type UseRoundTimerOptions = {
   isPaused?: boolean;
   isFrozen?: boolean;
   warningAtSeconds?: number;
-  playSound?: (key: AudioSourceKey) => void;
+  playSound?: (key: AudioSourceKey, volume?: number) => void;
   warningSound?: AudioSourceKey;
   onExpire?: () => void;
 };
@@ -21,7 +21,6 @@ export function useRoundTimer({
   onExpire,
 }: UseRoundTimerOptions) {
   const [seconds, setSeconds] = useState(initialSeconds);
-  const warningFiredRef = useRef(false);
   const onExpireRef = useRef(onExpire);
   const playSoundRef = useRef(playSound);
 
@@ -40,9 +39,10 @@ export function useRoundTimer({
       if (isFrozen) return;
 
       setSeconds((currentSeconds) => {
-        if (warningAtSeconds !== undefined && currentSeconds === warningAtSeconds + 1 && !warningFiredRef.current) {
-          warningFiredRef.current = true;
-          playSoundRef.current?.(warningSound);
+        if (warningAtSeconds !== undefined && currentSeconds <= warningAtSeconds && currentSeconds > 0) {
+          const elapsedWarningSeconds = warningAtSeconds - currentSeconds;
+          const volume = Math.min(1, 0.24 + ((elapsedWarningSeconds + 1) / warningAtSeconds) * 0.76);
+          playSoundRef.current?.(warningSound, volume);
         }
 
         if (currentSeconds <= 1) {
@@ -59,7 +59,6 @@ export function useRoundTimer({
   }, [isFrozen, isPaused, warningAtSeconds, warningSound]);
 
   const resetTimer = useCallback((nextSeconds = initialSeconds) => {
-    warningFiredRef.current = false;
     setSeconds(nextSeconds);
   }, [initialSeconds]);
 

@@ -1,7 +1,7 @@
 import type { SoloModeId } from '../../types';
 import type { FreshProfile } from '../profile/types';
 import type { FreshSoloModeAvailability } from './soloSetup.types';
-import { ALBUM_STICKER_CATALOG } from '../album/albumStickerCatalog';
+import { hasCommonStack, hasStickerInTier } from '../shared/wagers/wagerInventory';
 
 function getLockedReason(modeId: SoloModeId, activeProfile: FreshProfile | null): string | null {
   if (modeId === 'practice') return null;
@@ -10,17 +10,11 @@ function getLockedReason(modeId: SoloModeId, activeProfile: FreshProfile | null)
   const albumCounts = activeProfile.albumCounts ?? {};
 
   if (modeId === 'epicLite') {
-    const commonStack = ALBUM_STICKER_CATALOG.some(
-      (s) => s.chapterId === 'common' && (albumCounts[s.id] ?? 0) >= 25,
-    );
-    if (!commonStack) return 'You need one Common sticker stack of 25 to enter Epic Lite.';
+    if (!hasCommonStack(albumCounts, 25)) return 'You need one Common sticker stack of 25 to enter Epic Lite.';
   }
 
   if (modeId === 'epic') {
-    const hasEpicSticker = ALBUM_STICKER_CATALOG.some(
-      (s) => s.chapterId === 'epic' && (albumCounts[s.id] ?? 0) > 0,
-    );
-    if (!hasEpicSticker) return 'You need at least one epic sticker to enter Epic mode.';
+    if (!hasStickerInTier(albumCounts, 'epic')) return 'You need at least one epic sticker to enter Epic mode.';
   }
 
   return null;

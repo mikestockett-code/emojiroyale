@@ -1,6 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import { GildedButton } from '../shared/GameResultOverlay/GildedButton';
+import { luxuryResultStyles as styles } from '../shared/luxuryResultStyles';
 
 type Props = {
   onPlayAgain: () => void;
@@ -10,26 +11,26 @@ type Props = {
 
 export function RecapButtons({ onPlayAgain, onShare, onMenu }: Props) {
   return (
-    <View style={{ width: '100%', gap: 10 }}>
+    <View style={styles.buttonStack}>
       <GildedButton 
         label="PLAY AGAIN" 
         icon="▶" 
         primary 
         onPress={onPlayAgain} 
-        style={{ width: '100%' }} 
+        style={styles.fullWidth} 
       />
 
       <GildedButton
         label="SHARE"
         icon="↗"
         onPress={onShare}
-        style={{ width: '100%' }}
+        style={styles.fullWidth}
       />
 
       <GildedButton
         label="MENU"
         onPress={onMenu}
-        style={{ width: '100%' }}
+        style={styles.fullWidth}
       />
     </View>
   );

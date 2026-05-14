@@ -8,11 +8,20 @@ import { ScoreDisplay } from './ScoreDisplay';
 import { ProfileNameDisplay } from './ProfileNameDisplay';
 import { NamePlate } from './NamePlate';
 
+type WagerSubProfile = { name: string; avatar: string; colorHex: string };
+
 type Props = {
   width: number;
   height: number;
-  topLeftImage: any;
-  topRightImage: any;
+  topLeftImage?: any;
+  topLeftChalkLabel?: string;
+  topLeftWagerEmoji?: string | null;
+  topLeftSubProfile?: WagerSubProfile | null;
+  topRightImage?: any;
+  topRightChalkLabel?: string;
+  topRightWagerEmoji?: string | null;
+  topRightWagerEmojiName?: string | null;
+  topRightSubProfile?: WagerSubProfile | null;
   centerImage?: any;
   namePlateText?: string;
   timerText?: string;
@@ -38,7 +47,14 @@ export function TopGameArea({
   width,
   height,
   topLeftImage,
+  topLeftChalkLabel,
+  topLeftWagerEmoji,
+  topLeftSubProfile,
   topRightImage,
+  topRightChalkLabel,
+  topRightWagerEmoji,
+  topRightWagerEmojiName,
+  topRightSubProfile,
   centerImage,
   namePlateText,
   timerText,
@@ -80,6 +96,10 @@ export function TopGameArea({
       <RightBadge
         width={width} height={height} layout={layout}
         topRightImage={topRightImage}
+        topRightChalkLabel={topRightChalkLabel}
+        topRightWagerEmoji={topRightWagerEmoji}
+        topRightWagerEmojiName={topRightWagerEmojiName}
+        topRightSubProfile={topRightSubProfile}
         topRightImageScale={topRightImageScale}
         topRightImageOffsetX={topRightImageOffsetX}
         topRightImageOffsetY={topRightImageOffsetY}
@@ -94,6 +114,9 @@ export function TopGameArea({
         topSubLabel={topSubLabel}
         topSubValue={topSubValue}
         topLeftImage={topLeftImage}
+        topLeftChalkLabel={topLeftChalkLabel}
+        topLeftWagerEmoji={topLeftWagerEmoji}
+        topLeftSubProfile={topLeftSubProfile}
       />
 
       <NamePlate

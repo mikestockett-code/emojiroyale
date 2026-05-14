@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { ViewStyle } from 'react-native';
 import { useAudioContext } from '../../../fresh/audio/AudioContext';
+import { theme } from '../luxuryTheme';
 
 type Props = {
   label: string;
@@ -24,9 +25,9 @@ export function GildedButton({ label, icon, primary, onPress, style, fontSize = 
       }}
       style={({ pressed }) => [{ opacity: pressed ? 0.82 : 1 }, style]}
     >
-      <LinearGradient colors={['#ffd86b', '#c98c1a', '#5a3300']} style={styles.ring}>
+      <LinearGradient colors={[theme.gold, '#c98c1a', theme.darkGold]} style={styles.ring}>
         <LinearGradient
-          colors={primary ? ['#b41818', '#6a0808'] : ['#2a1408', '#18090a']}
+          colors={primary ? ['#b41818', '#6a0808'] : [theme.warmBrown, '#18090a']}
           style={styles.fill}
         >
           {icon ? <Text style={styles.icon}>{icon}</Text> : null}
@@ -60,8 +61,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '900',
     letterSpacing: 1.2,
-    color: '#ffd86b',
-    textShadowColor: '#3a1a00',
+    color: theme.gold,
+    textShadowColor: theme.ringShadow,
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 0,
   },

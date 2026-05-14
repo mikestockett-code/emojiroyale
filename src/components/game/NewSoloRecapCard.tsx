@@ -1,4 +1,6 @@
 import React, { useMemo, useRef, useState } from 'react';
+import { theme } from '../../fresh/shared/luxuryTheme';
+import { luxuryResultStyles as styles } from '../../fresh/shared/luxuryResultStyles';
 import { Modal, ScrollView, Share, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,12 +19,12 @@ import { SoloRecapProfile } from '../../fresh/solo/SoloRecapProfile';
 import { SoloRecapScore } from '../../fresh/solo/SoloRecapScore';
 import { SoloRecapHighlights } from '../../fresh/solo/SoloRecapHighlights';
 import { SoloRecapReward } from '../../fresh/solo/SoloRecapReward';
-import { soloRecapStyles as styles } from '../../fresh/solo/soloRecapStyles';
 import {
   getProfileAlbumProgress,
   getOwnedStickers,
 } from '../../fresh/album/albumProfileProgress';
 import { ALBUM_STICKER_CATALOG } from '../../fresh/album/albumStickerCatalog';
+import { getAlbumStickerById } from '../../fresh/album/albumStickerLookup';
 
 const SCARCITY_RANK: Record<string, number> = { extremelyRare: 3, rare: 2, common: 1 };
 
@@ -89,9 +91,7 @@ export function NewSoloRecapCard({
   }, [runRewardPreviews]);
 
   const favoriteSticker = useMemo(
-    () => favoriteStickerId
-      ? ALBUM_STICKER_CATALOG.find((s) => s.id === favoriteStickerId) ?? null
-      : null,
+    () => getAlbumStickerById(favoriteStickerId),
     [favoriteStickerId],
   );
 
@@ -149,7 +149,7 @@ export function NewSoloRecapCard({
 
   return (
     <Modal visible={visible} animationType="fade" statusBarTranslucent>
-      <LinearGradient colors={['#0d0608', '#1a0a06', '#0d0608']} style={{ flex: 1 }}>
+      <LinearGradient colors={['#0d0608', theme.deepBrown, '#0d0608']} style={styles.root}>
         <ScrollView
           contentContainerStyle={[
             styles.scroll,
@@ -190,7 +190,7 @@ export function NewSoloRecapCard({
             />
           </View>
 
-          <View style={{ height: 8 }} />
+          <View style={styles.buttonSpacer} />
 
           <RecapButtons onPlayAgain={onPlayAgain} onShare={handleShare} onMenu={onMenu} />
         </ScrollView>

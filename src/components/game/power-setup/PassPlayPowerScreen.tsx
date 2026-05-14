@@ -14,13 +14,15 @@ export function PassPlayPowerScreen({
   p1Profile,
   p2Profile,
   initialSlots,
+  allowEpi = false,
+  albumCounts,
   playerLabel,
   actionLabel,
   onConfirm,
   onBack,
 }: Props) {
   const insets = useSafeAreaInsets();
-  const { slot1, slot2, loadout, select, remove } = usePowerSlots(initialSlots);
+  const { slot1, slot2, loadout, assignSlot } = usePowerSlots(initialSlots);
 
   return (
     <PowerScreenLayout
@@ -28,8 +30,9 @@ export function PassPlayPowerScreen({
       playerLabel={playerLabel}
       slot1Id={slot1}
       slot2Id={slot2}
-      onCardSelect={select}
-      onCardRemove={remove}
+      onAssignSlot={assignSlot}
+      allowEpi={allowEpi}
+      albumCounts={albumCounts}
       actionLabel={actionLabel}
       onAction={() => onConfirm(loadout)}
       p1Profile={p1Profile}

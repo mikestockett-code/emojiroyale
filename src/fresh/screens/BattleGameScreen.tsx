@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import type { FreshProfileColor } from '../profile/types';
 import { useBattleGameState } from '../battle/useBattleGameState';
 import { useDelayedVisibility } from '../../hooks/useDelayedVisibility';
 import type { BattleGameNavigation } from '../types/navigation';
 import { GameModeScreenShell } from '../shared/GameModeScreenShell';
 import GameResultOverlay from '../shared/GameResultOverlay';
-import { createWizardOfOzRewardPreview } from '../../lib/jackpotRewards';
+import { BattleStageClearSplash } from '../battle/BattleStageClearSplash';
+import { useAudioContext } from '../audio/AudioContext';
 
 export default function BattleGameScreen({
   onBackToMenu,
@@ -17,6 +18,7 @@ export default function BattleGameScreen({
   onGrantAlbumPuzzlePiece,
   onGoToHowTo,
 }: BattleGameNavigation) {
+  const { playSound } = useAudioContext();
   const {
     board,
     currentRack,
@@ -25,21 +27,23 @@ export default function BattleGameScreen({
     rackScales,
     lastMoveIndex,
     winner,
-    roundNumber,
     roundEndState,
     timerSeconds,
     timerFrozen,
     rollFlow,
+    ep1Visible,
+    ep1EffectLabel,
     ep1AnimationEvent,
+    clearEp1,
     powerSlotsArray,
     rewardPreview,
     pendingStickerRewards,
-    isWizardOfOzJackpot,
     toddThoughtText,
     isTimerStealing,
     playerRollsRemaining,
     playerBattleScore,
     cpuBattleScore,
+    adaptiveDifficulty,
     handleSquarePress,
     handleSelectRackIndex,
     handlePowerSlotPress,
@@ -59,7 +63,7 @@ export default function BattleGameScreen({
 
   const timerText = `${Math.floor(timerSeconds / 60)}:${String(timerSeconds % 60).padStart(2, '0')}`;
   const isRoundEndOverlayVisible = useDelayedVisibility(roundEndState !== null, 2000);
-  const jackpotPreview = isWizardOfOzJackpot ? createWizardOfOzRewardPreview() : null;
+  const cpuLabel = battleSetup.cpuId === 'nico' ? 'Nico' : 'Todd';
   const battleResultTitle = roundEndState?.battleComplete && roundEndState.reason === 'playerWin'
     ? 'Stage Won!'
     : roundEndState?.battleComplete
@@ -68,6 +72,8 @@ export default function BattleGameScreen({
     ? 'You Win!'
     : roundEndState?.reason === 'cpuWin'
     ? 'CPU Wins'
+    : roundEndState?.reason === 'tie'
+    ? 'Draw'
     : "Time's Up!";
   const battleResultTier = winner?.type === 'legendary'
     ? 'legendary'
@@ -75,16 +81,35 @@ export default function BattleGameScreen({
     ? 'epic'
     : 'common';
   const didWinStage = roundEndState?.battleComplete && roundEndState.reason === 'playerWin';
+  const didClearAlterEgo = didWinStage && (battleSetup.stageNumber ?? 1) >= 3;
+  const [stageClearDismissed, setStageClearDismissed] = useState(false);
+
+  useEffect(() => {
+    if (!isRoundEndOverlayVisible || !didWinStage) return;
+    playSound('stageClear');
+  }, [didWinStage, isRoundEndOverlayVisible, playSound]);
+
+  useEffect(() => {
+    setStageClearDismissed(false);
+  }, [roundEndState]);
+
+  useEffect(() => {
+    if (!isRoundEndOverlayVisible || !didClearAlterEgo) return;
+    const timer = setTimeout(() => setStageClearDismissed(true), 3600);
+    return () => clearTimeout(timer);
+  }, [didClearAlterEgo, isRoundEndOverlayVisible]);
 
   return (
     <GameModeScreenShell
-      jackpotVisible={isRoundEndOverlayVisible && isWizardOfOzJackpot}
       gameAreaProps={{
         onBack: onBackToMenu,
         board,
         lastMoveIndex,
         winningLineIndices: winner?.indices ?? [],
         ep1AnimationEvent,
+        ep1StatusVisible: ep1Visible,
+        ep1StatusLabel: ep1EffectLabel,
+        onClearEp1Status: clearEp1,
         playerColors,
         playerTileColors,
         rollFlow,
@@ -105,15 +130,17 @@ export default function BattleGameScreen({
         secondProfileAvatar: '🤖',
         secondProfileColor: cpuColor,
         secondProfileBadgeText: '3',
-        namePlateText: `Round ${roundNumber}`,
+        namePlateText: undefined,
         stageText: `STAGE ${battleSetup.stageNumber}/3`,
         timerText,
         isTimerFrozen: timerFrozen,
         topLeftImage: null,
-        topRightImage: require('../../../assets/BattleModeCpuEgos/todd.png'),
+        topRightImage: battleSetup.cpuId === 'nico'
+          ? require('../../../assets/CustomEmojis/nico_non_alpha_emoji.png')
+          : require('../../../assets/BattleModeCpuEgos/todd.png'),
         topRightImageScale: 0.77,
         topRightImageOffsetX: 0,
-        topRightImageOffsetY: 0.01,
+        topRightImageOffsetY: -0.01,
         topRightThoughtText: toddThoughtText,
         isTimerStealing,
         topScoreValue: playerBattleScore,
@@ -126,25 +153,29 @@ export default function BattleGameScreen({
         onPowerSlotPress: (id) => handlePowerSlotPress(id as 'slot1' | 'slot2'),
       }}
     >
+      <BattleStageClearSplash
+        visible={Boolean(isRoundEndOverlayVisible && didClearAlterEgo && !stageClearDismissed)}
+        cpuId={battleSetup.cpuId}
+      />
       <GameResultOverlay
         visible={Boolean(roundEndState && isRoundEndOverlayVisible)}
         resultTitle={battleResultTitle}
-        resultSubtitle={roundEndState ? `Round ${roundEndState.roundNumber} complete` : ''}
+        resultSubtitle={roundEndState ? `${cpuLabel} ${roundEndState.roundNumber} complete` : ''}
         resultTier={battleResultTier}
-        rewardStickerId={jackpotPreview?.stickerId ?? rewardPreview?.stickerId ?? null}
-        rewardStickerCount={jackpotPreview?.count ?? rewardPreview?.count ?? 0}
-        rewardStickerLabel={jackpotPreview?.stickerName ?? rewardPreview?.stickerName ?? ''}
-        rewardStickerKind={jackpotPreview?.kind ?? rewardPreview?.kind}
-        rewardImageSource={jackpotPreview?.rewardImageSource ?? rewardPreview?.rewardImageSource}
+        rewardStickerId={rewardPreview?.stickerId ?? null}
+        rewardStickerCount={rewardPreview?.count ?? 0}
+        rewardStickerLabel={rewardPreview?.stickerName ?? ''}
+        rewardStickerKind={rewardPreview?.kind}
+        rewardImageSource={rewardPreview?.rewardImageSource}
         runRewardPreviews={pendingStickerRewards}
         continueLabel={didWinStage ? 'NEXT STAGE' : roundEndState?.battleComplete ? 'RETURN TO JOURNEY' : 'CONTINUE'}
         backLabel="MAIN MENU"
-        restartLabel="RESTART STAGE"
+        restartLabel={roundEndState?.battleComplete && !didWinStage ? 'RESTART STAGE' : 'NEXT ROUND'}
         showRecapOnLoss
         activeProfile={activeProfile}
-        onContinue={didWinStage ? onNextBattleStage : roundEndState?.battleComplete ? onReloadBattle : handleContinue}
+        onContinue={didWinStage ? () => onNextBattleStage(adaptiveDifficulty) : roundEndState?.battleComplete ? () => onReloadBattle(adaptiveDifficulty) : handleContinue}
         onBack={onBackToMenu}
-        onRestart={onReloadBattle}
+        onRestart={roundEndState?.battleComplete && !didWinStage ? () => onReloadBattle(adaptiveDifficulty) : handleContinue}
       />
     </GameModeScreenShell>
   );

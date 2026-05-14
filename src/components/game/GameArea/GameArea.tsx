@@ -1,17 +1,20 @@
 import React from 'react';
+import { theme } from '../../../fresh/shared/luxuryTheme';
 import { Image, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SharedBottomNav } from '../../../fresh/shared/SharedBottomNav';
 import { useGameLayout } from './useGameLayout';
 import { GameBoard } from './GameBoard';
 import { Ep1EffectOverlay } from './Ep1EffectOverlay';
+import { Ep1StatusPill } from './Ep1StatusPill';
+import { Confetti } from '../../../fresh/shared/GameResultOverlay/Confetti';
 import { WinningLineOverlay } from './WinningLineOverlay';
 import { PreviewOverlay } from './PreviewOverlay';
 import { StickerRack } from './StickerRack';
 import { PowerSlots } from './PowerSlots';
 import { TopGameArea } from './TopGameArea';
 import { HandoffOverlay } from './HandoffOverlay';
-import { ALL_ONE_COMBO, BG_IMAGE, SCORE_CLOUD, WAGER_CLOUD } from './constants';
+import { ALL_ONE_COMBO, BG_IMAGE, SCORE_CLOUD } from './constants';
 import type { GameAreaProps } from './types';
 import type { Player } from '../../../types';
 
@@ -21,6 +24,9 @@ export default function GameArea({
   lastMoveIndex = null,
   winningLineIndices = [],
   ep1AnimationEvent = null,
+  ep1StatusVisible = false,
+  ep1StatusLabel = 'Random Power',
+  onClearEp1Status,
   playerColors = { player1: '#f97316', player2: '#3b82f6' },
   playerTileColors,
   isRollMode = false,
@@ -37,7 +43,7 @@ export default function GameArea({
   selectedEmojiIndex = null,
   rackScales = [],
   rackTileColor = '#fdba74',
-  rackHighlightColor = '#ffd97d',
+  rackHighlightColor = theme.gold,
   onSelectRackIndex,
   onRoll,
   rollDisabled = false,
@@ -57,7 +63,14 @@ export default function GameArea({
   onProfilePress,
   onHowToPress,
   topLeftImage = SCORE_CLOUD,
-  topRightImage = WAGER_CLOUD,
+  topLeftChalkLabel,
+  topLeftWagerEmoji,
+  topLeftSubProfile,
+  topRightImage,
+  topRightChalkLabel,
+  topRightWagerEmoji,
+  topRightWagerEmojiName,
+  topRightSubProfile,
   centerImage,
   namePlateText,
   timerText,
@@ -81,7 +94,7 @@ export default function GameArea({
   powerSlots = [],
   onPowerSlotPress,
   isHandoffVisible = false,
-  handoffHighlightColor = '#ffd97d',
+  handoffHighlightColor = theme.gold,
   handoffNextPlayerName = 'Player 2',
   handoffCurrentPlayerName = 'Player 1',
   onContinue,
@@ -99,7 +112,7 @@ export default function GameArea({
     <View style={{ flex: 1 }}>
       <Image source={BG_IMAGE} resizeMode="stretch" style={{ position: 'absolute', top: 0, left: 0, width, height }} />
 
-      <TopGameArea width={width} height={height} topLeftImage={topLeftImage} topRightImage={topRightImage} centerImage={centerImage} namePlateText={namePlateText} timerText={timerText} isTimerFrozen={isTimerFrozen} isTimerStealing={isTimerStealing} topRightImageScale={topRightImageScale} topRightImageOffsetX={topRightImageOffsetX} topRightImageOffsetY={topRightImageOffsetY} topRightThoughtText={topRightThoughtText} centerImageOffsetY={centerImageOffsetY} namePlateOffsetY={namePlateOffsetY} namePlateScale={namePlateScale} topScoreValue={topScoreValue} topSubLabel={topSubLabel} topSubValue={topSubValue} stageText={stageText} topRightSubLabel={topRightSubLabel} topRightSubValue={topRightSubValue} profileName={profileName} />
+      <TopGameArea width={width} height={height} topLeftImage={topLeftImage} topLeftChalkLabel={topLeftChalkLabel} topLeftWagerEmoji={topLeftWagerEmoji} topLeftSubProfile={topLeftSubProfile} topRightImage={topRightImage} topRightChalkLabel={topRightChalkLabel} topRightWagerEmoji={topRightWagerEmoji} topRightWagerEmojiName={topRightWagerEmojiName} topRightSubProfile={topRightSubProfile} centerImage={centerImage} namePlateText={namePlateText} timerText={timerText} isTimerFrozen={isTimerFrozen} isTimerStealing={isTimerStealing} topRightImageScale={topRightImageScale} topRightImageOffsetX={topRightImageOffsetX} topRightImageOffsetY={topRightImageOffsetY} topRightThoughtText={topRightThoughtText} centerImageOffsetY={centerImageOffsetY} namePlateOffsetY={namePlateOffsetY} namePlateScale={namePlateScale} topScoreValue={topScoreValue} topSubLabel={topSubLabel} topSubValue={topSubValue} stageText={stageText} topRightSubLabel={topRightSubLabel} topRightSubValue={topRightSubValue} profileName={profileName} />
 
       <Image source={ALL_ONE_COMBO} resizeMode="contain" style={{ position: 'absolute', width: imgWidth, height: imgRenderedHeight * 0.995, left: imgLeft, top: imgTop + height * 0.007 }} />
 
@@ -128,6 +141,16 @@ export default function GameArea({
         cellSize={cellSize}
         event={ep1AnimationEvent}
       />
+
+      <Ep1StatusPill
+        visible={ep1StatusVisible}
+        effectLabel={ep1StatusLabel}
+        onClear={onClearEp1Status}
+      />
+
+      {ep1StatusVisible && ep1StatusLabel.includes('Emoji Power refill') ? (
+        <Confetti tier="legendary" />
+      ) : null}
 
       <PreviewOverlay
         isRollMode={isRollMode}

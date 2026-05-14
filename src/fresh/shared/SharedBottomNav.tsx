@@ -4,6 +4,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import type { FreshProfileColor } from '../profile/types';
 import { ProfileHud } from './ProfileHud';
 import { useAudioContext } from '../audio/AudioContext';
+import { theme } from './luxuryTheme';
 
 type SharedBottomNavProps = {
   profileName?: string;
@@ -84,12 +85,12 @@ export function SharedBottomNav({
             }}
             style={({ pressed }) => [styles.bottomNavBtn, pressed && styles.pressed]}
           >
-            <MaterialIcons name={isMuted ? 'volume-off' : 'volume-up'} size={20} color={isMuted ? 'rgba(255,217,125,0.4)' : '#ffd97d'} />
+            <MaterialIcons name={isMuted ? 'volume-off' : 'volume-up'} size={20} color={isMuted ? 'rgba(255,217,125,0.4)' : theme.gold} />
             <Text style={[styles.bottomNavLabel, isMuted && { opacity: 0.4 }]}>SOUND</Text>
           </Pressable>
         ) : (
           <>
-            <MaterialIcons name="emoji-events" size={20} color="#ffd97d" />
+            <MaterialIcons name="emoji-events" size={20} color={theme.gold} />
             <Text style={styles.bottomNavLabel}>{scoreLabel}</Text>
             <Text style={styles.bottomNavValue}>{typeof scoreValue === 'number' ? scoreValue.toLocaleString() : scoreValue}</Text>
           </>
@@ -104,7 +105,7 @@ export function SharedBottomNav({
         }}
         style={({ pressed }) => [styles.bottomNavBtn, pressed && styles.pressed]}
       >
-        <MaterialIcons name="arrow-back" size={20} color="#ffd97d" />
+        <MaterialIcons name="arrow-back" size={20} color={theme.gold} />
         <Text style={styles.bottomNavLabel}>BACK</Text>
       </Pressable>
 
@@ -116,7 +117,7 @@ export function SharedBottomNav({
         }}
         style={({ pressed }) => [styles.bottomNavBtn, pressed && styles.pressed]}
       >
-        <MaterialIcons name="apps" size={20} color="#ffd97d" />
+        <MaterialIcons name="apps" size={20} color={theme.gold} />
         <Text style={styles.bottomNavLabel}>How to Play</Text>
       </Pressable>
     </View>
@@ -124,33 +125,9 @@ export function SharedBottomNav({
 }
 
 const styles = StyleSheet.create({
-  bottomNav: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    backgroundColor: 'rgba(5,3,15,0.85)',
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,215,0,0.2)',
-    paddingHorizontal: 8,
-  },
-  bottomNavBtn: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 1,
-    minHeight: 44,
-  },
-  bottomNavLabel: {
-    fontSize: 10,
-    color: '#ffd97d',
-    fontWeight: '800',
-  },
-  bottomNavValue: {
-    fontSize: 12,
-    color: '#fff5de',
-    fontWeight: '900',
-  },
-  pressed: {
-    opacity: 0.8,
-  },
+  bottomNav:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', backgroundColor: 'rgba(5,3,15,0.85)', borderTopWidth: 1, borderTopColor: `${theme.gold}33`, paddingHorizontal: 8 },
+  bottomNavBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 1, minHeight: 44 },
+  bottomNavLabel: { fontSize: 10, color: theme.gold, fontWeight: '800' },
+  bottomNavValue: { fontSize: 12, color: theme.gold, fontWeight: '900' },
+  pressed: { ...theme.pressed },
 });

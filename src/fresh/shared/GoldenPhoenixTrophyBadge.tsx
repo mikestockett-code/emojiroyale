@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { theme } from './luxuryTheme';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import type { StyleProp, ViewStyle } from 'react-native';
 import Reanimated, {
@@ -68,13 +69,13 @@ const styles = StyleSheet.create({
     width: 82,
   },
   shelfRoot: {
-    width: 120,
+    width: 165,
   },
   glow: {
     position: 'absolute',
     zIndex: 0,
-    backgroundColor: '#ffd86b',
-    shadowColor: '#ffd86b',
+    backgroundColor: theme.gold,
+    shadowColor: theme.gold,
     shadowOpacity: 0.9,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 0 },
@@ -87,9 +88,9 @@ const styles = StyleSheet.create({
   },
   shelfGlow: {
     top: 2,
-    width: 55,
-    height: 55,
-    borderRadius: 28,
+    width: 76,
+    height: 76,
+    borderRadius: 38,
   },
   homeTrophy: {
     width: 66,
@@ -97,8 +98,8 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   shelfTrophy: {
-    width: 60,
-    height: 60,
+    width: 82,
+    height: 82,
     zIndex: 1,
   },
   namePlate: {
@@ -115,10 +116,10 @@ const styles = StyleSheet.create({
     marginTop: -1,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    minWidth: 108,
+    minWidth: 149,
   },
   kicker: {
-    color: '#ffd86b',
+    color: theme.gold,
     fontSize: 6,
     fontWeight: '900',
     letterSpacing: 0.8,
@@ -144,6 +145,6 @@ const styles = StyleSheet.create({
   },
   shelfHolder: {
     fontSize: 10,
-    maxWidth: 92,
+    maxWidth: 127,
   },
 });

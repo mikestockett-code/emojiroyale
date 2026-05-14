@@ -1,4 +1,5 @@
 import type { FreshProfile } from '../profile/types';
+import { hasStickerInTier } from '../shared/wagers/wagerInventory';
 
 type PassPlayWagerValidationOptions = {
   goldenPhoenixRequired?: boolean;
@@ -12,6 +13,16 @@ export function getPassPlayWagerBlockReason(
   options: PassPlayWagerValidationOptions = {},
 ) {
   if (!p1Profile || !p2Profile) return 'Choose both P1 and P2 before starting Pass & Play.';
+
+  if (wagerId === 'epic' || wagerId === 'legendary') {
+    const p1Counts = p1Profile.albumCounts ?? {};
+    const p2Counts = p2Profile.albumCounts ?? {};
+    const hasP1 = hasStickerInTier(p1Counts, wagerId);
+    const hasP2 = hasStickerInTier(p2Counts, wagerId);
+    if (!hasP1 && !hasP2) return `Both players need at least one ${wagerId} sticker to wager.`;
+    if (!hasP1) return `${p1Profile.name} needs at least one ${wagerId} sticker to wager.`;
+    if (!hasP2) return `${p2Profile.name} needs at least one ${wagerId} sticker to wager.`;
+  }
   if (!options.goldenPhoenixRequired) return null;
 
   if (wagerId !== 'legendary') {

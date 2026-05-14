@@ -6,7 +6,6 @@ import {
   mapWinnerToSoloRewardWinType,
   type FreshSoloRewardPreview,
 } from '../../lib/soloRewardRules';
-import { createWizardOfOzRewardPreview, grantWizardOfOzJackpot } from '../../lib/jackpotRewards';
 import type { FreshSoloSetup } from '../../fresh/solo/soloSetup.types';
 import type { SoloGameStateOptions } from './soloGameStateTypes';
 
@@ -28,9 +27,9 @@ export function useSoloRewards({
   const grantPlayerWinReward = useCallback((
     winner: NonNullable<WinnerInfo>,
     wasRollWin: boolean,
-    isWizardOfOzJackpot = false,
+    wasTornadoWin = false,
   ) => {
-    setCurrentScore((score) => score + getSoloScoreForWinner(winner, wasRollWin));
+    setCurrentScore((score) => score + getSoloScoreForWinner(winner, wasRollWin, wasTornadoWin));
 
     const nextRewardPreviews = getSoloRewardPreviews(
       mapWinnerToSoloRewardWinType(winner, wasRollWin),
@@ -38,10 +37,7 @@ export function useSoloRewards({
       false,
       albumPuzzlePieces,
     );
-    const jackpotPreview: FreshSoloRewardPreview | null = isWizardOfOzJackpot
-      ? createWizardOfOzRewardPreview()
-      : null;
-    const nextRewardPreview = jackpotPreview ?? nextRewardPreviews[0] ?? null;
+    const nextRewardPreview = nextRewardPreviews[0] ?? null;
 
     for (const preview of nextRewardPreviews) {
       if (preview.kind === 'puzzlePiece' && preview.puzzleId && preview.puzzlePieceId) {
@@ -50,14 +46,9 @@ export function useSoloRewards({
         onGrantAlbumSticker(activeProfileId, preview.stickerId, preview.count);
       }
     }
-    if (isWizardOfOzJackpot) {
-      grantWizardOfOzJackpot(activeProfileId, onGrantAlbumSticker);
-    }
-
     setRunRewardPreviews((previews) => [
       ...previews,
       ...nextRewardPreviews,
-      ...(jackpotPreview ? [jackpotPreview] : []),
     ]);
     setRewardPreview(nextRewardPreview);
     return nextRewardPreview;

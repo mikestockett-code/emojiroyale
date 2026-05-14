@@ -1,13 +1,10 @@
-import { useCallback, useMemo, useState } from 'react';
-import type {
-  BoardCell,
-  Player,
-} from '../../types';
-import { useGameBoard, type TurnEndMeta } from '../../hooks/useGameBoard';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTieDetection } from '../../hooks/useTieDetection';
+import type { BattlePowerId, BoardCell, Player } from '../../types';
+import type { TurnEndMeta } from '../../hooks/useGameBoard';
 import { useRoundTimer } from '../../hooks/useRoundTimer';
 import { useSoloCpu, type CpuTurnContext } from '../../hooks/useSoloCpu';
-import { useGamePowerSlots, toGameBoardPowerSlot } from '../../hooks/useGamePowerSlots';
-import { useGamePowerPress } from '../../hooks/useGamePowerPress';
+import { useModeBoardController } from '../../hooks/useModeBoardController';
 import { useBattleScore } from './useBattleScore';
 import { getWinner } from '../../lib/winDetection';
 import { createSharedPlayerRacks } from '../../lib/sharedRackLogic';
@@ -15,12 +12,14 @@ import { getScoreForWinner } from '../../lib/gameScoreRules';
 import type { FreshBattleSetup } from './battleSetup.types';
 import { useAudioContext } from '../audio/AudioContext';
 import { getWinSound } from '../../lib/audio';
-import { getBattleCpuDifficulty } from './battleCpuConfig';
+import { isEpicOrLegendaryWinner } from '../../lib/roundResult';
+import { getCpuBaseDifficulty, getCpuPersonality } from './battleCpuConfig';
 import { useBattleRewards, type BattleRewardOptions } from './useBattleRewards';
 import { useToddNervousMistake } from './useToddNervousMistake';
+import { useNicoBehavior } from './useNicoBehavior';
 
 const ROUND_TIMER_SECONDS = 120;
-export type BattleRoundEndReason = 'playerWin' | 'cpuWin' | 'timeout';
+export type BattleRoundEndReason = 'playerWin' | 'cpuWin' | 'timeout' | 'tie';
 
 export type BattleRoundEndState = {
   reason: BattleRoundEndReason;
@@ -30,132 +29,203 @@ export type BattleRoundEndState = {
 
 export function useBattleGameState(setup: FreshBattleSetup, rewardOptions: BattleRewardOptions = {}) {
   const { playSound } = useAudioContext();
-  const stageNumber = setup.stageNumber ?? 1;
-  const cpuId = setup.cpuId ?? 'todd';
-  const cpuDifficultyLevel = getBattleCpuDifficulty(cpuId, stageNumber);
+  const stageNumber   = setup.stageNumber ?? 1;
+  const cpuId         = setup.cpuId ?? 'todd';
+  const personality   = getCpuPersonality(cpuId);
+  const stageBaseDifficulty = getCpuBaseDifficulty(cpuId, stageNumber);
+  const baseDifficulty = Math.max(stageBaseDifficulty, setup.startingDifficulty ?? stageBaseDifficulty);
 
-  const [currentPlayer, setCurrentPlayer] = useState<Player>('player1');
-  const [winner, setWinner] = useState<ReturnType<typeof getWinner>>(null);
-  const [roundNumber, setRoundNumber] = useState(1);
-  const [roundEndState, setRoundEndState] = useState<BattleRoundEndState | null>(null);
-  const [timerFrozen, setTimerFrozen] = useState(false);
+  // Float difficulty — can be bumped adaptively during the battle
+  const [adaptiveDifficulty, setAdaptiveDifficulty] = useState(baseDifficulty);
+  const bumpDifficulty = useCallback((delta: number) => {
+    setAdaptiveDifficulty(prev => Math.min(personality.difficultyMax, prev + delta));
+  }, [personality.difficultyMax]);
+
+  // Track which score thresholds have already triggered a difficulty bump this stage
+  const scoreThresholdsBumpedRef = useRef<Set<number>>(new Set());
+
+  const [currentPlayer, setCurrentPlayer]   = useState<Player>('player1');
+  const [winner, setWinner]                 = useState<ReturnType<typeof getWinner>>(null);
+  const [roundNumber, setRoundNumber]       = useState(1);
+  const [roundEndState, setRoundEndState]   = useState<BattleRoundEndState | null>(null);
+  const [timerFrozen, setTimerFrozen]       = useState(false);
   const [tortureUsedThisTurn, setTortureUsedThisTurn] = useState(false);
   const [playerRollsRemaining, setPlayerRollsRemaining] = useState(3);
+  const [roundTauntText, setRoundTauntText] = useState<string | null>(null);
+  const roundTauntTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const {
-    playerBattleScore,
-    cpuBattleScore,
-    battleOver,
-    applyRoundWinScore,
-    resetBattleScore,
-  } = useBattleScore();
-  const battleRewards = useBattleRewards({ stageNumber, rewardOptions });
-  const todd = useToddNervousMistake(cpuId);
+  const { playerBattleScore, cpuBattleScore, battleOver, applyRoundWinScore, resetBattleScore } = useBattleScore();
+  const battleRewards  = useBattleRewards({ cpuId, stageNumber, rewardOptions });
+  const todd           = useToddNervousMistake(cpuId);
+  const nico           = useNicoBehavior();
   const { isTimerStealing } = todd;
+
+  // Track player's last move to feed Nico's square-reaction
+  const prevPlayerRef    = useRef<Player>('player1');
+  const lastMoveIndexRef = useRef<number | null>(null);
+  const playerMoveCountRef = useRef(0);
+  const playerPowerUseCountRef = useRef(0);
+  const nicoIntroShownRef = useRef(false);
+
+  useEffect(() => () => {
+    if (roundTauntTimerRef.current) clearTimeout(roundTauntTimerRef.current);
+  }, []);
+
+  useEffect(() => {
+    if (cpuId !== 'nico') return;
+    if (stageNumber !== 1) return;
+    if (nicoIntroShownRef.current) return;
+    nicoIntroShownRef.current = true;
+    const timer = setTimeout(() => nico.triggerStageIntro(stageNumber), 650);
+    return () => clearTimeout(timer);
+  }, [cpuId, nico, stageNumber]);
+
+  const showRoundTaunt = useCallback(() => {
+    const lines = personality.lines.roundTaunt ?? personality.lines.nervous;
+    if (lines.length === 0) return;
+    const line = lines[Math.floor(Math.random() * lines.length)] ?? null;
+    if (cpuId === 'todd') {
+      todd.showThoughtText(line);
+      return;
+    }
+    setRoundTauntText(line);
+    if (roundTauntTimerRef.current) clearTimeout(roundTauntTimerRef.current);
+    roundTauntTimerRef.current = setTimeout(() => {
+      setRoundTauntText(null);
+      roundTauntTimerRef.current = null;
+    }, 3200);
+  }, [cpuId, personality, todd]);
 
   const handleTimerExpire = useCallback(() => {
     setRoundEndState({ reason: 'timeout', roundNumber });
   }, [roundNumber]);
 
-  const {
-    seconds: timerSeconds,
-    resetTimer,
-    addSeconds: addTimerSeconds,
-  } = useRoundTimer({
+  const { seconds: timerSeconds, resetTimer, addSeconds: addTimerSeconds } = useRoundTimer({
     initialSeconds: ROUND_TIMER_SECONDS,
     isPaused: Boolean(roundEndState) || Boolean(winner),
     isFrozen: timerFrozen,
-    warningAtSeconds: 10,
+    warningAtSeconds: 8,
+    warningSound: 'heartbeat',
     playSound,
     onExpire: handleTimerExpire,
   });
 
-  const {
-    powerSlotData,
-    buildPowerSlotsArray,
-    consumePower,
-    resetPowers,
-  } = useGamePowerSlots(setup.powerSlotIds, { allowEpi: true });
-
   const finishTurn = useCallback((nextBoard: BoardCell[], meta?: TurnEndMeta) => {
+    if (currentPlayer === 'player1') {
+      playerMoveCountRef.current += 1;
+      if (meta?.moveType === 'power') playerPowerUseCountRef.current += 1;
+    }
+
     const nextWinner = getWinner(nextBoard);
     if (nextWinner) {
+      const wasTornadoWin = meta?.effectId === 'tornado';
       playSound(getWinSound(nextWinner.type, nextWinner.player === 'player1'));
       setWinner(nextWinner);
-      const roundScore = getScoreForWinner(nextWinner, meta?.moveType === 'roll');
-      const nextPlayerBattleScore = nextWinner.player === 'player1'
-        ? playerBattleScore + roundScore
-        : playerBattleScore;
-      const nextCpuBattleScore = nextWinner.player === 'player2'
-        ? cpuBattleScore + roundScore
-        : cpuBattleScore;
-      const battleComplete = nextPlayerBattleScore >= 2000 || nextCpuBattleScore >= 2000;
-      applyRoundWinScore(nextWinner, meta?.moveType === 'roll');
+      const roundScore = getScoreForWinner(nextWinner, meta?.moveType === 'roll', wasTornadoWin);
+      const nextPlayerScore = nextWinner.player === 'player1' ? playerBattleScore + roundScore : playerBattleScore;
+      const nextCpuScore    = nextWinner.player === 'player2' ? cpuBattleScore + roundScore    : cpuBattleScore;
+      const battleComplete  = nextWinner.player === 'player1' ? nextPlayerScore >= 2000 : nextCpuScore >= 2000;
+      applyRoundWinScore(nextWinner, meta?.moveType === 'roll', wasTornadoWin);
       if (nextWinner.player === 'player1') {
-        battleRewards.grantPlayerRoundRewards(
-          nextWinner,
-          meta?.moveType === 'roll',
-          battleComplete,
-          meta?.effectId === 'tornado',
-        );
+        battleRewards.grantPlayerRoundRewards(nextWinner, meta?.moveType === 'roll', battleComplete);
+        // Adaptive bump: player epic win → CPU gets harder
+        if (isEpicOrLegendaryWinner(nextWinner)) {
+          bumpDifficulty(personality.epicAdaptDelta);
+        }
+        const moveBump = playerMoveCountRef.current <= 6 ? 0.5 : playerMoveCountRef.current <= 10 ? 0.25 : 0;
+        const powerBump = playerPowerUseCountRef.current === 0 ? 0.2 : 0;
+        const timeBump = timerSeconds >= 75 ? 0.35 : timerSeconds >= 45 ? 0.18 : 0;
+        const performanceBump = moveBump + powerBump + timeBump;
+        if (performanceBump > 0) {
+          bumpDifficulty(performanceBump);
+        }
       } else if (battleComplete) {
         battleRewards.clearCpuBattleCompleteRewards();
       }
-      setRoundEndState({
-        reason: nextWinner.player === 'player1' ? 'playerWin' : 'cpuWin',
-        roundNumber,
-        battleComplete,
-      });
+      setRoundEndState({ reason: nextWinner.player === 'player1' ? 'playerWin' : 'cpuWin', roundNumber, battleComplete });
       return;
     }
     setTortureUsedThisTurn(false);
-    setCurrentPlayer((player) => (player === 'player1' ? 'player2' : 'player1'));
-  }, [applyRoundWinScore, battleRewards, cpuBattleScore, playSound, playerBattleScore, roundNumber]);
+    setCurrentPlayer(p => p === 'player1' ? 'player2' : 'player1');
+  }, [applyRoundWinScore, battleRewards, bumpDifficulty, cpuBattleScore, currentPlayer, personality.epicAdaptDelta, playSound, playerBattleScore, roundNumber, timerSeconds]);
+
+  const createBattleEpiPowerHandler = useCallback(({ rerollCurrentRack }: { rerollCurrentRack: () => void }) => (
+    powerId: BattlePowerId,
+  ) => {
+    if (powerId === 'power-plus-10-seconds') { addTimerSeconds(10); todd.triggerPlayerPowerResponse(); return true; }
+    if (powerId === 'power-clock-freeze')    { setTimerFrozen(true); playSound('iceFreeze'); todd.triggerPlayerPowerResponse(); return true; }
+    if (powerId === 'power-reverse-time')    { resetTimer(ROUND_TIMER_SECONDS); todd.triggerPlayerPowerResponse(); return true; }
+    if (powerId === 'power-rerack')          { if (tortureUsedThisTurn) return false; rerollCurrentRack(); return true; }
+    return false;
+  }, [addTimerSeconds, playSound, resetTimer, todd, tortureUsedThisTurn]);
 
   const {
-    board,
-    playerRacks,
-    selectedEmojiIndex,
-    rackScales,
-    lastMoveIndex,
-    rollFlow,
-    selectedPowerSlotId,
-    ep1AnimationEvent,
-    showEp1Launch,
-    handleSquarePress,
-    handleSelectRackIndex,
-    setBoard,
-    setPlayerRacks,
-    setLastMoveIndex,
-    setSelectedPowerSlotId,
+    board, playerRacks, selectedEmojiIndex, rackScales, lastMoveIndex,
+    rollFlow, selectedPowerSlotId, ep1Visible, ep1EffectLabel, ep1AnimationEvent, clearEp1, showEp1Launch,
+    handleSquarePress, handleSelectRackIndex,
+    setBoard, setPlayerRacks, setLastMoveIndex,
     resetBoardState,
-    rerollCurrentRack,
-  } = useGameBoard({
+    powerSlotsByPlayer, buildPowerSlotsArrayForPlayer,
+    handlePowerSlotPress, resetPowers,
+  } = useModeBoardController({
     currentPlayer,
     onTurnEnd: finishTurn,
+    powerLoadouts: {
+      player1: setup.powerSlotIds,
+      player2: { slot1: null, slot2: null },
+    },
+    allowEpi: true,
     rollsDisabled: Boolean(winner) || Boolean(roundEndState) || currentPlayer !== 'player1' || playerRollsRemaining <= 0,
     interactionDisabled: Boolean(winner) || Boolean(roundEndState) || currentPlayer !== 'player1',
     soloMode: 'battle',
     roundNumber,
     initialPlayerRacks: createSharedPlayerRacks(),
-    powerSlots: {
-      slot1: toGameBoardPowerSlot(powerSlotData.slot1),
-      slot2: toGameBoardPowerSlot(powerSlotData.slot2),
-    },
-    onConsumePower: consumePower,
     onRackLocked: () => setTortureUsedThisTurn(true),
-    onRollConsumed: () => setPlayerRollsRemaining((count) => Math.max(0, count - 1)),
+    onRollConsumed: () => setPlayerRollsRemaining(c => Math.max(0, c - 1)),
     playSound,
+    createOnEpiPower: createBattleEpiPowerHandler,
   });
 
-  const powerSlotsArray = useMemo(
-    () => buildPowerSlotsArray(selectedPowerSlotId),
-    [buildPowerSlotsArray, selectedPowerSlotId],
-  );
+  // Keep a ref to lastMoveIndex so the effect below can read it without triggering
+  lastMoveIndexRef.current = lastMoveIndex;
 
-  const interceptCpuTurn = useCallback((ctx: CpuTurnContext) =>
-    todd.executeTurn(ctx, { addTimerSeconds, setBoard, setLastMoveIndex, showEp1Launch, playerRacks, rollFlow, roundNumber, setPlayerRacks }),
-  [todd, addTimerSeconds, setBoard, setLastMoveIndex, showEp1Launch, playerRacks, rollFlow, roundNumber, setPlayerRacks]);
+  useTieDetection({
+    board,
+    isRoundOver: Boolean(winner || roundEndState),
+    playerRollsRemaining,
+    cpuRollsRemaining: 0, // Battle CPU never rolls
+    totalPowerUsesRemaining: (powerSlotsByPlayer.player1.slot1?.usesLeft ?? 0) + (powerSlotsByPlayer.player1.slot2?.usesLeft ?? 0),
+    onTie: () => setRoundEndState({ reason: 'tie', roundNumber }),
+  });
+
+  // Bump difficulty as player score crosses 501 / 1001 / 1501
+  useEffect(() => {
+    const thresholds = [501, 1001, 1501];
+    for (const t of thresholds) {
+      if (playerBattleScore >= t && !scoreThresholdsBumpedRef.current.has(t)) {
+        scoreThresholdsBumpedRef.current.add(t);
+        bumpDifficulty(0.3);
+      }
+    }
+  }, [playerBattleScore, bumpDifficulty]);
+
+  // Nico reacts when currentPlayer flips from player1 → player2 (player just moved)
+  useEffect(() => {
+    if (cpuId !== 'nico') return;
+    if (prevPlayerRef.current === 'player1' && currentPlayer === 'player2') {
+      nico.triggerPlayerSquareResponse(board, lastMoveIndexRef.current);
+    }
+    prevPlayerRef.current = currentPlayer;
+  }, [currentPlayer, cpuId, board, nico]);
+
+  const powerSlotsArray = buildPowerSlotsArrayForPlayer('player1');
+
+  const interceptCpuTurn = useCallback((ctx: CpuTurnContext) => {
+    if (cpuId === 'nico') {
+      return nico.executeTurn(ctx, { playerRacks, roundNumber, stageNumber, setBoard, setPlayerRacks, setLastMoveIndex, showEp1Launch, onBumpDifficulty: bumpDifficulty });
+    }
+    return todd.executeTurn(ctx, { addTimerSeconds, setBoard, setLastMoveIndex, showEp1Launch, playerRacks, rollFlow, roundNumber, setPlayerRacks, timerFrozen });
+  }, [cpuId, nico, todd, addTimerSeconds, setBoard, setLastMoveIndex, showEp1Launch, playerRacks, rollFlow, roundNumber, stageNumber, setPlayerRacks, bumpDifficulty, timerFrozen]);
 
   useSoloCpu({
     board,
@@ -163,7 +233,7 @@ export function useBattleGameState(setup: FreshBattleSetup, rewardOptions: Battl
     winnerTitle: winner || roundEndState ? 'battle-over' : null,
     soloMode: 'battle',
     soloRoundNumber: roundNumber,
-    cpuDifficultyLevel,
+    cpuDifficultyLevel: adaptiveDifficulty,
     cpuRollsRemaining: 0,
     playerRacks,
     rollFlow,
@@ -175,59 +245,32 @@ export function useBattleGameState(setup: FreshBattleSetup, rewardOptions: Battl
     interceptCpuTurn,
   });
 
-  const handleEpiPower = useCallback((powerId: string) => {
-    if (powerId === 'power-plus-10-seconds') {
-      addTimerSeconds(10);
-      todd.triggerPlayerPowerResponse();
-      return true;
-    }
-    if (powerId === 'power-clock-freeze') {
-      setTimerFrozen(true);
-      playSound('iceFreeze');
-      todd.triggerPlayerPowerResponse();
-      return true;
-    }
-    if (powerId === 'power-reverse-time') {
-      resetTimer(ROUND_TIMER_SECONDS);
-      todd.triggerPlayerPowerResponse();
-      return true;
-    }
-    if (powerId === 'power-rerack') {
-      if (tortureUsedThisTurn) return false;
-      rerollCurrentRack();
-      return true;
-    }
-    return false;
-  }, [addTimerSeconds, playSound, rerollCurrentRack, resetTimer, todd, tortureUsedThisTurn]);
+  const resetCpuBehaviorRound = useCallback(() => {
+    todd.resetToddRound();
+    nico.resetNicoRound();
+  }, [todd, nico]);
 
-  const handlePowerSlotPress = useGamePowerPress({
-    board,
-    powerSlots: powerSlotData,
-    disabled: Boolean(winner) || Boolean(roundEndState) || currentPlayer !== 'player1',
-    selectedPowerSlotId,
-    setSelectedPowerSlotId,
-    consumePower,
-    setBoard,
-    setLastMoveIndex,
-    showEp1Launch,
-    finishTurn,
-    onEpiPower: handleEpiPower,
-  });
+  const resetCpuBehavior = useCallback(() => {
+    todd.resetTodd();
+    nico.resetNico();
+  }, [todd, nico]);
 
   const handleContinue = useCallback(() => {
     if (roundEndState?.battleComplete) return;
     resetBoardState(undefined, createSharedPlayerRacks());
-    setCurrentPlayer('player1');
+    setCurrentPlayer(roundNumber % 2 === 0 ? 'player1' : 'player2');
     setWinner(null);
     battleRewards.clearRewardPreview();
     setRoundEndState(null);
-    if (roundEndState?.reason === 'timeout') resetTimer(ROUND_TIMER_SECONDS);
     setTimerFrozen(false);
-    todd.resetTodd();
+    resetCpuBehaviorRound();
     setTortureUsedThisTurn(false);
     resetPowers();
-    setRoundNumber((round) => round + 1);
-  }, [battleRewards, resetBoardState, resetPowers, resetTimer, roundEndState?.battleComplete, roundEndState?.reason, todd]);
+    playerMoveCountRef.current = 0;
+    playerPowerUseCountRef.current = 0;
+    setRoundNumber(r => r + 1);
+    showRoundTaunt();
+  }, [battleRewards, resetBoardState, resetCpuBehaviorRound, resetPowers, roundEndState?.battleComplete, roundNumber, showRoundTaunt]);
 
   const handleBattleReset = useCallback(() => {
     resetBoardState(undefined, createSharedPlayerRacks());
@@ -237,13 +280,20 @@ export function useBattleGameState(setup: FreshBattleSetup, rewardOptions: Battl
     setRoundEndState(null);
     resetTimer(ROUND_TIMER_SECONDS);
     setTimerFrozen(false);
-    todd.resetTodd();
+    resetCpuBehavior();
     setTortureUsedThisTurn(false);
     resetPowers();
     setRoundNumber(1);
     setPlayerRollsRemaining(3);
     resetBattleScore();
-  }, [battleRewards, resetBattleScore, resetBoardState, resetPowers, resetTimer, todd]);
+    setAdaptiveDifficulty(baseDifficulty);
+    setRoundTauntText(null);
+    playerMoveCountRef.current = 0;
+    playerPowerUseCountRef.current = 0;
+    scoreThresholdsBumpedRef.current = new Set();
+  }, [baseDifficulty, battleRewards, resetBattleScore, resetBoardState, resetCpuBehavior, resetPowers, resetTimer]);
+
+  const cpuThoughtText = roundTauntText ?? (cpuId === 'nico' ? nico.thoughtText : todd.thoughtText);
 
   return {
     board,
@@ -258,7 +308,10 @@ export function useBattleGameState(setup: FreshBattleSetup, rewardOptions: Battl
     timerSeconds,
     timerFrozen,
     rollFlow,
+    ep1Visible,
+    ep1EffectLabel,
     ep1AnimationEvent,
+    clearEp1,
     powerSlotsArray,
     selectedPowerSlotId,
     rewardPreview: battleRewards.rewardPreview,
@@ -267,9 +320,9 @@ export function useBattleGameState(setup: FreshBattleSetup, rewardOptions: Battl
     cpuBattleScore,
     playerRollsRemaining,
     battleOver,
-    isWizardOfOzJackpot: battleRewards.isWizardOfOzJackpot,
-    toddThoughtText: todd.thoughtText,
+    toddThoughtText: cpuThoughtText,   // kept same key so BattleGameScreen needs no change
     isTimerStealing,
+    adaptiveDifficulty,
     handleSquarePress,
     handleSelectRackIndex,
     handlePowerSlotPress,

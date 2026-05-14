@@ -9,7 +9,7 @@ import type { CpuRollFlow } from './rollFlowTypes';
 
 export const CPU_PLACE_FINISH_DELAY_MS = 882;
 export const CPU_ROLL_FINISH_DELAY_MS = 546;
-const CPU_TURN_START_DELAY_MS = 260;
+const CPU_TURN_START_DELAY_MS = 273;
 
 export type CpuTurnContext = {
   board: BoardCell[];
@@ -27,11 +27,12 @@ type Props = {
   playerRacks: Record<Player, StickerId[]>;
   rollFlow?: CpuRollFlow;
   onCpuRollUsed?: () => void;
+  onCpuPowerRefill?: () => { label: string; bonusCount?: number; banked?: boolean } | null;
   setIsSoloCpuThinking?: (thinking: boolean) => void;
   setBoard: (newBoard: BoardCell[]) => void;
   setPlayerRacks: (newRacks: Record<Player, StickerId[]>) => void;
   setLastMoveIndex: (index: number | null) => void;
-  onEp1Launched?: (event?: GameBoardEffectEvent | string) => void;
+  onEp1Launched?: (event?: GameBoardEffectEvent | string, showStatus?: boolean, statusLabel?: string) => void;
   onCpuMoveComplete: (nextBoard: BoardCell[]) => void;
   interceptCpuTurn?: (ctx: CpuTurnContext) => boolean;
 };
@@ -47,6 +48,7 @@ export function useSoloCpu({
   playerRacks,
   rollFlow,
   onCpuRollUsed,
+  onCpuPowerRefill,
   setIsSoloCpuThinking,
   setBoard,
   setPlayerRacks,
@@ -80,6 +82,47 @@ export function useSoloCpu({
       .filter(i => i !== -1);
 
     if (emptySpots.length === 0) {
+      // Board is full — try rolling a board die if rolls remain (may land EP1 and open spots)
+      if (cpuRollsRemaining > 0 && rollFlow) {
+        const rollableIdx = board.findIndex(cell => cell !== null && cell.faces != null);
+        if (rollableIdx >= 0) {
+          const finalFaceIndex = Math.floor(Math.random() * 6);
+          onCpuRollUsed?.();
+          rollFlow.startCpuRoll(rollableIdx, finalFaceIndex, (idx, faceIndex) => {
+            const rolledBoard = [...board];
+            const rolledCell = rolledBoard[idx];
+            const landedFace = rolledCell?.faces?.[faceIndex];
+            if (landedFace === 'die-ep1') {
+              const ep1Result = applyRandomGameBoardEffect(rolledBoard, idx, lastCpuEp1EffectIdRef.current, 'player2');
+              lastCpuEp1EffectIdRef.current = ep1Result.effectId;
+              onEp1Launched?.(
+                createGameBoardEffectEvent(ep1Result.effectId, ep1Result.effectLabel, ep1Result.affectedIndices, rolledBoard),
+                true,
+                `CPU dice landed on Random Power and sparked ${ep1Result.effectLabel}`,
+              );
+              finishCpuRoll(ep1Result.nextBoard, ep1Result.lastMoveIndex ?? idx);
+            } else if (landedFace === 'die-free') {
+              const refillResult = onCpuPowerRefill?.();
+              const refillLabel = refillResult
+                ? refillResult.banked
+                  ? `banked +${refillResult.bonusCount ?? 1} on ${refillResult.label}`
+                  : `filled up ${refillResult.label}`
+                : 'no power selected';
+              onEp1Launched?.(`CPU dice landed on Emoji Power refill and ${refillLabel}`, true);
+              lastCpuEp1EffectIdRef.current = null;
+              finishCpuRoll(rolledBoard, idx);
+            } else if (rolledCell) {
+              rolledBoard[idx] = applyDieFace(rolledCell, faceIndex);
+              lastCpuEp1EffectIdRef.current = null;
+              finishCpuRoll(rolledBoard, idx);
+            } else {
+              finishCpuRoll(rolledBoard, idx);
+            }
+          });
+          return;
+        }
+      }
+      // Nothing can be done — signal done, tie detector will handle it
       setIsSoloCpuThinking?.(false);
       cpuTurnInFlightRef.current = false;
       onCpuMoveComplete(board);
@@ -134,7 +177,7 @@ export function useSoloCpu({
       const target = decision.rollTargetIndex;
       const cell = board[target];
       if (cell?.faces) {
-        const finalFaceIndex = Math.floor(Math.random() * 5);
+        const finalFaceIndex = Math.floor(Math.random() * 6);
         onCpuRollUsed?.();
         rollFlow.startCpuRoll(target, finalFaceIndex, (idx, faceIndex) => {
           const rolledBoard = [...board];
@@ -143,9 +186,22 @@ export function useSoloCpu({
           if (landedFace === 'die-ep1') {
             const ep1Result = applyRandomGameBoardEffect(rolledBoard, idx, lastCpuEp1EffectIdRef.current, 'player2');
             lastCpuEp1EffectIdRef.current = ep1Result.effectId;
-            onEp1Launched?.(createGameBoardEffectEvent(ep1Result.effectId, ep1Result.effectLabel, ep1Result.affectedIndices, rolledBoard));
+            onEp1Launched?.(
+              createGameBoardEffectEvent(ep1Result.effectId, ep1Result.effectLabel, ep1Result.affectedIndices, rolledBoard),
+              true,
+              `CPU dice landed on Random Power and sparked ${ep1Result.effectLabel}`,
+            );
             finishCpuRoll(ep1Result.nextBoard, ep1Result.lastMoveIndex ?? idx);
             return;
+          } else if (landedFace === 'die-free') {
+            const refillResult = onCpuPowerRefill?.();
+            const refillLabel = refillResult
+              ? refillResult.banked
+                ? `banked +${refillResult.bonusCount ?? 1} on ${refillResult.label}`
+                : `filled up ${refillResult.label}`
+              : 'no power selected';
+            onEp1Launched?.(`CPU dice landed on Emoji Power refill and ${refillLabel}`, true);
+            lastCpuEp1EffectIdRef.current = null;
           } else if (rolledCell) {
             rolledBoard[idx] = applyDieFace(rolledCell, faceIndex);
             lastCpuEp1EffectIdRef.current = null;
@@ -159,7 +215,7 @@ export function useSoloCpu({
     doPlace(board);
   }, [
     board, currentPlayer, winnerTitle, soloMode, soloRoundNumber, cpuDifficultyLevel,
-    cpuRollsRemaining, playerRacks, rollFlow, onCpuRollUsed,
+    cpuRollsRemaining, playerRacks, rollFlow, onCpuPowerRefill, onCpuRollUsed,
     setIsSoloCpuThinking, setBoard, setPlayerRacks, setLastMoveIndex, onEp1Launched,
     onCpuMoveComplete, interceptCpuTurn,
   ]);

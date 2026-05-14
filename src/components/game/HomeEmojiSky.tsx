@@ -1,3 +1,4 @@
+import { theme } from '../../fresh/shared/luxuryTheme';
 import React, { useEffect, useMemo } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import type { ImageSourcePropType } from 'react-native';
@@ -259,7 +260,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: 999,
     backgroundColor: 'rgba(255,216,107,0.08)',
-    shadowColor: '#ffd86b',
+    shadowColor: theme.gold,
     shadowOpacity: 0.28,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 0 },

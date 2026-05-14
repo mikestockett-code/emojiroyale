@@ -73,7 +73,7 @@ export function FrozenClockOverlay({ left, top, size }: Props) {
         topPanelStyles.iceRoot,
         {
           left: left - size * 0.13,
-          top: top - size * 0.13,
+          top: top - size * 0.25,
           width: size * 1.26,
           height: size * 1.26,
           borderRadius: size * 0.63,
@@ -116,4 +116,3 @@ export function FrozenClockOverlay({ left, top, size }: Props) {
     </View>
   );
 }
-

@@ -12,7 +12,7 @@ import type {
 import type { AudioSourceKey } from '../lib/audio';
 import { BOARD_SIZE } from '../constants/gameConstants';
 import { useRollFlow } from './useRollFlow';
-import { applyDieFace, buildDieCell, getRandomFreeSticker } from '../lib/diceLogic';
+import { applyDieFace, buildDieCell } from '../lib/diceLogic';
 import { createSharedPlayerRacks, createSharedRack } from '../lib/sharedRackLogic';
 import { applyRandomGameBoardEffect, applyTargetedGameBoardEffect, createGameBoardEffectEvent } from '../lib/gameBoardEffects';
 import type { GameBoardEffectEvent, GameBoardEffectId } from '../lib/gameBoardEffects';
@@ -56,6 +56,7 @@ type UseGameBoardParams = {
   initialPlayerRacks?: Record<Player, StickerId[]>;
   powerSlots?: PowerSlotsById;
   onConsumePower?: (slotId: BattlePowerSlotId) => void;
+  onPowerRefill?: () => { label: string; bonusCount: number; banked: boolean } | null;
   onRollConsumed?: () => void;
   onRackLocked?: () => void;
   playSound?: (key: AudioSourceKey) => void;
@@ -72,6 +73,7 @@ export function useGameBoard({
   initialPlayerRacks,
   powerSlots,
   onConsumePower,
+  onPowerRefill,
   onRollConsumed,
   onRackLocked,
   playSound,
@@ -137,12 +139,21 @@ export function useGameBoard({
       nextLastMoveIndex = ep1Result.lastMoveIndex;
       lastEp1EffectIdRef.current = ep1Result.effectId;
       rollEffectId = ep1Result.effectId;
-      setEp1EffectLabel(ep1Result.effectLabel);
+      setEp1EffectLabel(`Dice landed on Random Power and sparked ${ep1Result.effectLabel}`);
       setEp1AnimationEvent(createGameBoardEffectEvent(ep1Result.effectId, ep1Result.effectLabel, ep1Result.affectedIndices, board));
       setEp1Visible(true);
       playEp1Sound(ep1Result.effectId, playSound);
     } else if (landedFace === 'die-free') {
-      nextBoard[index] = { player: currentPlayer, stickerId: getRandomFreeSticker() };
+      const refillResult = onPowerRefill?.();
+      const refillLabel = refillResult
+        ? refillResult.banked
+          ? `banked +${refillResult.bonusCount} on ${refillResult.label}`
+          : `filled up your ${refillResult.label}`
+        : 'No power selected';
+      setEp1EffectLabel(`Dice landed on Emoji Power refill and ${refillLabel}`);
+      setEp1AnimationEvent(null);
+      setEp1Visible(true);
+      playSound?.('jackpot');
       lastEp1EffectIdRef.current = null;
     } else {
       nextBoard[index] = applyDieFace(selectedCell, faceIndex);
@@ -156,7 +167,7 @@ export function useGameBoard({
     setSelectedPowerSlotId(null);
     onRollConsumed?.();
     onTurnEnd(nextBoard, { moveType: 'roll', effectId: rollEffectId });
-  }, [board, currentPlayer, onRollConsumed, onTurnEnd, playSound, rollsDisabled]);
+  }, [board, currentPlayer, onPowerRefill, onRollConsumed, onTurnEnd, playSound, rollsDisabled]);
 
   const rollFlow = useRollFlow({
     board,
@@ -164,6 +175,53 @@ export function useGameBoard({
     onEnterRollMode: () => setSelectedEmojiIndex(null),
     disabled: rollsDisabled,
   });
+
+  const placeFromRackIndex = useCallback((boardIndex: number, rackIndex: number) => {
+    if (interactionDisabled || rollFlow.isActive) return false;
+    if (board[boardIndex] !== null) return false;
+
+    const selectedStickerId = currentRack[rackIndex];
+    if (!selectedStickerId) return false;
+
+    const nextBoard = [...board];
+    nextBoard[boardIndex] = buildDieCell(currentPlayer, selectedStickerId, roundNumber, soloMode);
+
+    playSound?.('place');
+    setBoard(nextBoard);
+    setLastMoveIndex(boardIndex);
+    setSelectedEmojiIndex(null);
+    setSelectedPowerSlotId(null);
+    setPlayerRacks((currentRacks) => {
+      const newRack = createSharedRack(undefined, { soloMode, roundNumber });
+      const currentLockedSlot = lockedRackSlots[currentPlayer];
+      if (currentLockedSlot && currentLockedSlot.index !== rackIndex) {
+        newRack[currentLockedSlot.index] = currentLockedSlot.stickerId;
+      }
+      return { ...currentRacks, [currentPlayer]: newRack };
+    });
+    setLockedRackSlots((currentLocks) => {
+      const currentLockedSlot = currentLocks[currentPlayer];
+      if (!currentLockedSlot || currentLockedSlot.index !== rackIndex) {
+        return currentLocks;
+      }
+      return { ...currentLocks, [currentPlayer]: null };
+    });
+    setEp1Visible(false);
+    setEp1AnimationEvent(null);
+    onTurnEnd(nextBoard, { moveType: 'place' });
+    return true;
+  }, [
+    board,
+    currentPlayer,
+    currentRack,
+    interactionDisabled,
+    lockedRackSlots,
+    onTurnEnd,
+    playSound,
+    rollFlow.isActive,
+    roundNumber,
+    soloMode,
+  ]);
 
   const handleSquarePress = useCallback((index: number) => {
     if (rollFlow.isActive) {
@@ -188,7 +246,7 @@ export function useGameBoard({
 
       setEp1EffectLabel(effectEvent.label);
       setEp1AnimationEvent(effectEvent);
-      setEp1Visible(true);
+      setEp1Visible(false);
       playEp1Sound(effectEvent?.id, playSound, 'upgrade');
       setBoard(effectResult.nextBoard);
       setLastMoveIndex(effectResult.lastMoveIndex);
@@ -200,61 +258,29 @@ export function useGameBoard({
 
     if (board[index] !== null || selectedEmojiIndex === null) return;
 
-    const selectedStickerId = currentRack[selectedEmojiIndex];
-    if (!selectedStickerId) return;
-
-    const nextBoard = [...board];
-    nextBoard[index] = buildDieCell(currentPlayer, selectedStickerId, roundNumber, soloMode);
-
-    playSound?.('place');
-    setBoard(nextBoard);
-    setLastMoveIndex(index);
-    setSelectedEmojiIndex(null);
-    setSelectedPowerSlotId(null);
-    setPlayerRacks((currentRacks) => {
-      const newRack = createSharedRack(undefined, { soloMode, roundNumber });
-      const currentLockedSlot = lockedRackSlots[currentPlayer];
-      if (currentLockedSlot && currentLockedSlot.index !== selectedEmojiIndex) {
-        newRack[currentLockedSlot.index] = currentLockedSlot.stickerId;
-      }
-      return { ...currentRacks, [currentPlayer]: newRack };
-    });
-    setLockedRackSlots((currentLocks) => {
-      const currentLockedSlot = currentLocks[currentPlayer];
-      if (!currentLockedSlot || currentLockedSlot.index !== selectedEmojiIndex) {
-        return currentLocks;
-      }
-      return { ...currentLocks, [currentPlayer]: null };
-    });
-    setEp1Visible(false);
-    setEp1AnimationEvent(null);
-    onTurnEnd(nextBoard, { moveType: 'place' });
+    placeFromRackIndex(index, selectedEmojiIndex);
   }, [
     board,
     consumePower,
-    currentPlayer,
-    currentRack,
     interactionDisabled,
-    lockedRackSlots,
+    placeFromRackIndex,
     onTurnEnd,
     playSound,
     powerSlots,
     rollFlow,
-    roundNumber,
     selectedEmojiIndex,
     selectedPowerSlotId,
-    soloMode,
   ]);
 
-  const showEp1Launch = useCallback((event: GameBoardEffectEvent | string = 'Random Power') => {
+  const showEp1Launch = useCallback((event: GameBoardEffectEvent | string = 'Random Power', showStatus = false, statusLabel?: string) => {
     if (typeof event === 'string') {
       setEp1EffectLabel(event);
-      setEp1Visible(true);
+      setEp1Visible(showStatus);
       return;
     }
-    setEp1EffectLabel(event.label);
+    setEp1EffectLabel(statusLabel ?? event.label);
     setEp1AnimationEvent(event);
-    setEp1Visible(true);
+    setEp1Visible(showStatus);
     playEp1Sound(event.id, playSound);
   }, [playSound]);
 
@@ -334,6 +360,7 @@ export function useGameBoard({
     showEp1Launch,
     handleSquarePress,
     handleSelectRackIndex,
+    placeFromRackIndex,
     handleResolveRoll,
     animateRackSelection,
     setBoard,

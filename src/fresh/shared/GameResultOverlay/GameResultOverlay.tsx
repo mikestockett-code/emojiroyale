@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import { Animated, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { theme } from '../luxuryTheme';
+import { gameResultOverlayStyles as styles } from './GameResultOverlay.styles';
 import { NewSoloRecapCard } from '../../../components/game/NewSoloRecapCard';
 import { Confetti } from './Confetti';
 import { GildedButton } from './GildedButton';
@@ -127,11 +129,11 @@ export default function GameResultOverlay({
           ]}
         >
           <LinearGradient
-            colors={['#fff5ad', '#ffd86b', cfg.ring, '#5a3300']}
+            colors={['#fff5ad', theme.gold, cfg.ring, theme.darkGold]}
             locations={[0, 0.22, 0.74, 1]}
             style={[styles.cardRing, { shadowColor: cfg.shadowColor }]}
           >
-            <LinearGradient colors={['#241007', '#110604', '#2a1408']} style={styles.cardInner}>
+            <LinearGradient colors={['#241007', '#110604', theme.warmBrown]} style={styles.cardInner}>
               <View pointerEvents="none" style={[styles.shineLine, { backgroundColor: cfg.ring }]} />
               <CornerDots />
 
@@ -184,78 +186,3 @@ export default function GameResultOverlay({
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  backdrop: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: 'rgba(5,2,2,0.88)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 50,
-  },
-  cardRing: {
-    width: '88%',
-    maxWidth: 360,
-    borderRadius: 22,
-    padding: 3,
-    shadowOpacity: 0.7,
-    shadowRadius: 38,
-    shadowOffset: { width: 0, height: 14 },
-    elevation: 20,
-    zIndex: 12,
-  },
-  cardMotion: {
-    width: '100%',
-    alignItems: 'center',
-    zIndex: 12,
-  },
-  heroGlow: {
-    position: 'absolute',
-    width: 330,
-    height: 330,
-    borderRadius: 165,
-    zIndex: 6,
-  },
-  cardInner: {
-    borderRadius: 19,
-    padding: 16,
-    overflow: 'hidden',
-    alignItems: 'center',
-    gap: 8,
-  },
-  shineLine: {
-    position: 'absolute',
-    top: 0,
-    left: 18,
-    right: 18,
-    height: 2,
-    opacity: 0.75,
-    shadowColor: '#fff2a8',
-    shadowOpacity: 0.8,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 0 },
-  },
-  kicker: {
-    fontSize: 10,
-    fontWeight: '900',
-    letterSpacing: 3,
-    textShadowColor: '#000',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 0,
-  },
-  title: {
-    fontSize: 36,
-    fontWeight: '900',
-    color: '#ffd86b',
-    textShadowColor: '#3a1a00',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 10,
-  },
-  subtitle: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.78)',
-    textAlign: 'center',
-  },
-  trophyWrap: { width: '100%' },
-  btnStack: { width: '100%', gap: 8 },
-});

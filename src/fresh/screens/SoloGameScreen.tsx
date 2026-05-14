@@ -1,4 +1,5 @@
 import React, { useCallback } from 'react';
+import { theme } from '../shared/luxuryTheme';
 import { Alert } from 'react-native';
 import type { GameScreenNavigation } from '../types/navigation';
 import GameResultOverlay from '../shared/GameResultOverlay';
@@ -8,12 +9,12 @@ import { getSoloSafeScore } from '../../lib/soloRewardRules';
 import type { FreshProfile, FreshProfileColor } from '../profile/types';
 import type { FreshSoloSetup } from '../solo/soloSetup.types';
 import { GameModeScreenShell } from '../shared/GameModeScreenShell';
-import { SoloEp1StatusPill } from '../solo/SoloEp1StatusPill';
 import { getFreshSoloModeAvailability } from '../solo/soloSubmenuValidation';
 import { createFreshSoloSetup } from '../solo/soloWagerFactory';
 import { useSoloLossHighScore } from '../solo/useSoloLossHighScore';
-import type { StickerId } from '../../types';
+import type { BattlePowerSlotId, StickerId } from '../../types';
 import type { AlbumPuzzleId } from '../album/album.types';
+import { getAlbumStickerEmoji, getAlbumStickerLabel } from '../album/albumStickerLookup';
 
 type Props = GameScreenNavigation & {
   soloSetup: FreshSoloSetup;
@@ -71,6 +72,9 @@ export default function SoloGameScreen({
     ep1EffectLabel,
     ep1AnimationEvent,
     clearEp1,
+    buildPowerSlotsArray,
+    selectedPowerSlotId,
+    handlePowerSlotPress,
     handleSquarePress,
     handleSelectRackIndex,
     handleContinue,
@@ -112,7 +116,7 @@ export default function SoloGameScreen({
             {
               text: `Switch to ${fallbackLabel}`,
               onPress: () => {
-                onSwitchSoloSetup?.(createFreshSoloSetup(fallbackMode));
+                onSwitchSoloSetup?.(createFreshSoloSetup(fallbackMode, activeProfile?.albumCounts ?? {}, { slot1: null, slot2: null }));
                 handleRestart();
               },
             },
@@ -135,6 +139,9 @@ export default function SoloGameScreen({
         lastMoveIndex,
         winningLineIndices,
         ep1AnimationEvent,
+        ep1StatusVisible: ep1Visible,
+        ep1StatusLabel: ep1EffectLabel,
+        onClearEp1Status: clearEp1,
         playerColors: { player1: '#f59e0b', player2: '#60a5fa' },
         playerTileColors: { player1: '#fdba74', player2: '#93c5fd' },
         rollFlow,
@@ -143,17 +150,24 @@ export default function SoloGameScreen({
         selectedEmojiIndex,
         rackScales,
         rackTileColor: '#fdba74',
-        rackHighlightColor: '#ffd97d',
+        rackHighlightColor: theme.gold,
         onSelectRackIndex: handleSelectRackIndex,
         timerText: '15',
         namePlateText: `Round ${soloRoundNumber}`,
         rollDisabled: Boolean(winnerTitle) || playerRollsRemaining <= 0 || currentPlayer !== 'player1' || isSoloCpuThinking,
         winner: winnerTitle,
         scoreValue: currentScore,
+        topRightChalkLabel: soloSetup.wager.stickerId ? 'WAGER' : 'NO WAGER',
+        topRightWagerEmoji: getAlbumStickerEmoji(soloSetup.wager.stickerId),
+        topRightWagerEmojiName: soloSetup.wager.stickerId
+          ? getAlbumStickerLabel(soloSetup.wager.stickerId, '')
+          : null,
         topScoreValue: currentScore,
         topSubLabel: 'HIGH SCORE',
         topSubValue: globalHighScore,
         onHowToPress: onGoToHowTo,
+        powerSlots: buildPowerSlotsArray(selectedPowerSlotId),
+        onPowerSlotPress: (id) => handlePowerSlotPress(id as BattlePowerSlotId),
         profileName: activeProfile?.name,
         profileAvatar: activeProfile?.avatar,
         profileColor: activeProfile?.color,
@@ -164,7 +178,6 @@ export default function SoloGameScreen({
         secondProfileBadgeText: String(cpuRollsRemaining),
       }}
     >
-      <SoloEp1StatusPill visible={ep1Visible} effectLabel={ep1EffectLabel} onClear={clearEp1} />
       <GameResultOverlay
         visible={isResultOverlayVisible}
         resultTitle={winnerTitle ?? 'Round Over'}
@@ -195,4 +208,3 @@ export default function SoloGameScreen({
     </GameModeScreenShell>
   );
 }
-

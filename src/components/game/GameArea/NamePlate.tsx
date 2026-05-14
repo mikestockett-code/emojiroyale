@@ -19,12 +19,12 @@ export function NamePlate({ width, height, layout, namePlateText, stageText, nam
   return (
     <>
       {namePlateText ? (
-        <Text style={[topPanelStyles.namePlateText, { top: baseTop, left: width * 0.156, width: width * 0.7, fontSize: 11.6 * namePlateScale }]}>
+        <Text style={[topPanelStyles.namePlateText, { top: baseTop, left: width * 0.156, width: width * 0.7, fontSize: 11.48 * namePlateScale }]}>
           {namePlateText}
         </Text>
       ) : null}
       {stageText ? (
-        <Text style={[topPanelStyles.namePlateText, { top: baseTop + 18, left: width * 0.156, width: width * 0.7, fontSize: 23.2 * namePlateScale }]}>
+        <Text style={[topPanelStyles.namePlateText, { top: baseTop + 18, left: width * 0.156, width: width * 0.7, fontSize: 17.23 * namePlateScale }]}>
           {stageText}
         </Text>
       ) : null}

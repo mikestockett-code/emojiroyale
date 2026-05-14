@@ -7,17 +7,9 @@ const FOUR_SQUARE_CORNERS = [
   [18, 19, 23, 24],
 ] as const;
 
-export function applyFourSquarePower(board: BoardCell[]) {
-  const occupiedCorners = FOUR_SQUARE_CORNERS.filter((corner) => corner.some((index) => board[index] !== null));
-  if (occupiedCorners.length === 0) {
-    return {
-      nextBoard: [...board],
-      lastMoveIndex: null,
-      affectedIndices: [],
-    };
-  }
-  const cornerPool = occupiedCorners;
-  const corner = cornerPool[Math.floor(Math.random() * cornerPool.length)];
+export type FourSquareCorner = typeof FOUR_SQUARE_CORNERS[number];
+
+function applyFourSquareCorner(board: BoardCell[], corner: FourSquareCorner) {
   const nextBoard = [...board];
   corner.forEach((index) => {
     nextBoard[index] = null;
@@ -28,6 +20,45 @@ export function applyFourSquarePower(board: BoardCell[]) {
     lastMoveIndex: corner[0],
     affectedIndices: [...corner],
   };
+}
+
+export function getBestFourSquareCorner(board: BoardCell[], targetPlayer: 'player1' | 'player2' = 'player1') {
+  let bestCorner: FourSquareCorner | null = null;
+  let bestTargetCount = 0;
+  let bestAnyCount = 0;
+
+  for (const corner of FOUR_SQUARE_CORNERS) {
+    const targetCount = corner.filter((index) => board[index]?.player === targetPlayer).length;
+    const anyCount = corner.filter((index) => board[index] !== null).length;
+    if (
+      targetCount > bestTargetCount ||
+      (targetCount === bestTargetCount && anyCount > bestAnyCount)
+    ) {
+      bestCorner = corner;
+      bestTargetCount = targetCount;
+      bestAnyCount = anyCount;
+    }
+  }
+
+  return bestCorner && bestAnyCount > 0 ? bestCorner : null;
+}
+
+export function applyFourSquarePower(board: BoardCell[], cornerOverride?: FourSquareCorner | null) {
+  if (cornerOverride) {
+    return applyFourSquareCorner(board, cornerOverride);
+  }
+
+  const occupiedCorners = FOUR_SQUARE_CORNERS.filter((corner) => corner.some((index) => board[index] !== null));
+  if (occupiedCorners.length === 0) {
+    return {
+      nextBoard: [...board],
+      lastMoveIndex: null,
+      affectedIndices: [],
+    };
+  }
+  const cornerPool = occupiedCorners;
+  const corner = cornerPool[Math.floor(Math.random() * cornerPool.length)];
+  return applyFourSquareCorner(board, corner);
 }
 
 export function applyTornadoPower(board: BoardCell[]) {

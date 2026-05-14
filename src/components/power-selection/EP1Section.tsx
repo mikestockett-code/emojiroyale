@@ -4,7 +4,7 @@ import { EP1_CONFIG } from './ep1Config';
 import { PowerSection } from './PowerSection';
 import type { PowerSelectionSectionProps } from './types';
 
-export function EP1Section({ slot1, slot2, albumCounts, onSelect, onRemove }: PowerSelectionSectionProps) {
+export function EP1Section({ slot1, slot2, albumCounts, onAssignSlot }: PowerSelectionSectionProps) {
   const { height } = useWindowDimensions();
 
   return (
@@ -18,8 +18,7 @@ export function EP1Section({ slot1, slot2, albumCounts, onSelect, onRemove }: Po
       slot1={slot1}
       slot2={slot2}
       albumCounts={albumCounts}
-      onSelect={onSelect}
-      onRemove={onRemove}
+      onAssignSlot={onAssignSlot}
     />
   );
 }

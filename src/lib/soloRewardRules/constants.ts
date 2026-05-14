@@ -3,7 +3,7 @@
 import type { SoloWagerTier } from '../../types';
 import type { AlbumScarcityId } from '../../fresh/album/album.types';
 import { POINTS_BY_WIN_TYPE } from '../gameScoreRules';
-import type { FreshSoloRewardWinType } from './types';
+import type { GameScoreWinType } from '../gameScoreRules';
 
 export const SOLO_SAFE_SCORE_BY_WAGER: Partial<Record<SoloWagerTier, number>> = {
   epicLite: 2000,
@@ -24,4 +24,4 @@ export const BRONZE_PUZZLE_REWARD_CHANCE_BY_COLLECTED_COUNT: Record<number, numb
   3: 0.05,
 };
 
-export const SOLO_POINTS_BY_WIN_TYPE: Record<FreshSoloRewardWinType, number> = POINTS_BY_WIN_TYPE;
+export const SOLO_POINTS_BY_WIN_TYPE: Record<GameScoreWinType, number> = POINTS_BY_WIN_TYPE;

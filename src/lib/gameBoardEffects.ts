@@ -193,7 +193,8 @@ function selectEffectTargetIndex(
   actingPlayer?: Player,
 ) {
   if (effectId === 'removeTile') {
-    return pickOpponentTileIndex(board, actingPlayer) ?? pickOccupiedIndex(board, fallbackTargetIndex);
+    // Only valid when opponent actually has tiles — never erase own stickers
+    return pickOpponentTileIndex(board, actingPlayer);
   }
 
   if (effectId === 'clearRow') {

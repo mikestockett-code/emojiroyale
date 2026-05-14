@@ -4,7 +4,6 @@ export const SOLO_TOP      = require('../../../../assets/SharedAssets/sharedtop.
 export const BG_IMAGE      = require('../../../../assets/backgrounds/backgroundgamearea.png');
 export const ROLL_BUTTON   = require('../../../../assets/buttons/roll.png');
 export const SCORE_CLOUD   = require('../../../../assets/SharedAssets/scorecloud.png');
-export const WAGER_CLOUD   = require('../../../../assets/SharedAssets/wagercloud.png');
 
 export const POWER_IMAGES: Record<string, any> = {
   'power-torture-rack':    require('../../../../assets/PowersSlots/TortureRackSelector.png'),

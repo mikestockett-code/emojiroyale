@@ -36,5 +36,10 @@ export function useEpiPowers(
     setEpiUsesLeft(buildInitialEpiUses(slotIds, albumCounts));
   }, [slotIds, albumCounts]);
 
-  return { epiUsesLeft, consume, reset };
+  const refill = useCallback((slotId: BattlePowerSlotId) => {
+    const maxUses = buildInitialEpiUses(slotIds, albumCounts)[slotId];
+    setEpiUsesLeft((cur) => ({ ...cur, [slotId]: Math.max(cur[slotId], maxUses) }));
+  }, [albumCounts, slotIds]);
+
+  return { epiUsesLeft, consume, reset, refill };
 }

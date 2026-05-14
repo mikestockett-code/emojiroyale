@@ -28,7 +28,7 @@ export function useSoloSubmenuState(activeProfile: FreshProfile | null) {
     },
     buildSoloSetup: () => {
       if (!selectedAvailability?.isSelectable) return null;
-      return createFreshSoloSetup(selectedMode);
+      return createFreshSoloSetup(selectedMode, activeProfile?.albumCounts ?? {});
     },
   };
 }

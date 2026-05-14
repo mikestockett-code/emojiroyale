@@ -1,20 +1,28 @@
 import React from 'react';
-import { Image, ImageBackground, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { Image, ImageBackground, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { SharedBottomNav } from '../../../fresh/shared/SharedBottomNav';
 import { GildedButton } from '../../../fresh/shared/GameResultOverlay/GildedButton';
+import { useAudioContext } from '../../../fresh/audio/AudioContext';
 import { EP1Section } from '../../power-selection/EP1Section';
+import { EPISection } from '../../power-selection/EPISection';
 import { EP1_IMAGES } from '../../power-selection/ep1Config';
-import { submenuStyles as styles } from '../../../fresh/shared/submenuStyles';
+import { EPI_IMAGES } from '../../power-selection/epiConfig';
+import { styles } from './PowerScreenLayout.styles';
 import { BG, SLOT1, SLOT2 } from './constants';
-import type { BattlePowerId, Profile } from '../../../types';
+import type { BattlePowerId, Profile, StickerId } from '../../../types';
+
+const POWER_IMAGES = { ...EP1_IMAGES, ...EPI_IMAGES };
+const START_BUTTON_IMG = require('../../../../assets/buttons/start.png');
+const START_IMAGE_LABELS = new Set(['START GAME', 'START BATTLE', 'START MATCH →', 'START MATCH']);
 
 type Props = {
   headerLogo: React.ReactNode;
   playerLabel: string;
   slot1Id: BattlePowerId | null;
   slot2Id: BattlePowerId | null;
-  onCardSelect: (id: BattlePowerId) => void;
-  onCardRemove: (id: BattlePowerId) => void;
+  onAssignSlot: (slotId: 'slot1' | 'slot2', id: BattlePowerId | null) => void;
+  allowEpi?: boolean;
+  albumCounts?: Record<StickerId, number>;
   actionLabel: string;
   onAction: () => void;
   p1Profile: Profile | null;
@@ -28,8 +36,9 @@ export function PowerScreenLayout({
   playerLabel,
   slot1Id,
   slot2Id,
-  onCardSelect,
-  onCardRemove,
+  onAssignSlot,
+  allowEpi = false,
+  albumCounts,
   actionLabel,
   onAction,
   p1Profile,
@@ -38,6 +47,9 @@ export function PowerScreenLayout({
   bottomInset,
 }: Props) {
   const { height } = useWindowDimensions();
+  const { playSound } = useAudioContext();
+  const useStartImageButton = START_IMAGE_LABELS.has(actionLabel);
+  const startButtonMarginTop = height * (actionLabel === 'START BATTLE' ? 0.07 : 0.12);
 
   return (
     <ImageBackground source={BG} resizeMode="cover" style={styles.screenRoot}>
@@ -53,14 +65,14 @@ export function PowerScreenLayout({
         <View style={styles.slotRow}>
           <View style={styles.slotWrapper}>
             <Image
-              source={slot1Id ? EP1_IMAGES[slot1Id] : SLOT1}
+              source={slot1Id ? POWER_IMAGES[slot1Id] : SLOT1}
               style={styles.slotImg}
               resizeMode="contain"
             />
           </View>
           <View style={styles.slotWrapper}>
             <Image
-              source={slot2Id ? EP1_IMAGES[slot2Id] : SLOT2}
+              source={slot2Id ? POWER_IMAGES[slot2Id] : SLOT2}
               style={styles.slotImg}
               resizeMode="contain"
             />
@@ -70,17 +82,41 @@ export function PowerScreenLayout({
         <EP1Section
           slot1={slot1Id}
           slot2={slot2Id}
-          onSelect={onCardSelect}
-          onRemove={onCardRemove}
+          onAssignSlot={onAssignSlot}
         />
 
-        <GildedButton
-          label={actionLabel}
-          icon="▶"
-          primary
-          onPress={onAction}
-          style={{ marginHorizontal: 16, marginTop: height * 0.12, transform: [{ scale: 1.30 }] }}
-        />
+        {allowEpi ? (
+          <EPISection
+            slot1={slot1Id}
+            slot2={slot2Id}
+            albumCounts={albumCounts}
+            onAssignSlot={onAssignSlot}
+          />
+        ) : null}
+
+        {useStartImageButton ? (
+          <Pressable
+            onPress={() => {
+              playSound('button');
+              onAction();
+            }}
+            style={({ pressed }) => [
+              styles.startImageButton,
+              { marginTop: startButtonMarginTop },
+              pressed && styles.startImageButtonPressed,
+            ]}
+          >
+            <Image source={START_BUTTON_IMG} style={styles.startImage} resizeMode="contain" />
+          </Pressable>
+        ) : (
+          <GildedButton
+            label={actionLabel}
+            icon="▶"
+            primary
+            onPress={onAction}
+            style={{ marginHorizontal: 16, marginTop: startButtonMarginTop, transform: [{ scale: 1.30 }] }}
+          />
+        )}
       </ScrollView>
 
       <View style={styles.navBar}>

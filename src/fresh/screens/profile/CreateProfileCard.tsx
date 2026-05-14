@@ -3,7 +3,7 @@ import { Pressable, Text, TextInput, View } from 'react-native';
 import {
   FRESH_PROFILE_AVATARS,
   FRESH_PROFILE_COLORS,
-} from '../../profile/useFreshProfiles';
+} from '../../profile/profileOptions';
 import type { FreshProfileColor } from '../../profile/types';
 import { profileStyles as styles } from './profileStyles';
 

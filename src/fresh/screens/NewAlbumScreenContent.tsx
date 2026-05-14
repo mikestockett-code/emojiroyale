@@ -3,7 +3,6 @@ import { ImageBackground, View } from 'react-native';
 import { AlbumShelfView } from '../album/AlbumShelfView';
 import { AlbumSubBookView } from '../album/AlbumSubBookView';
 import { SharedBottomNav } from '../shared/SharedBottomNav';
-import { styles } from './AlbumScreen.styles';
 import type { AlbumBookConfig, AlbumBookId } from '../album/album.types';
 import type { FreshProfile } from '../profile/types';
 
@@ -35,9 +34,9 @@ export function NewAlbumScreenContent({
   onBackPress,
 }: Props) {
   return (
-    <View style={styles.root}>
-      <ImageBackground source={BACKGROUND} style={styles.background} imageStyle={styles.backgroundImage}>
-        <View style={[styles.content, { paddingTop }]}>
+    <View style={{ flex: 1, backgroundColor: '#000' }}>
+      <ImageBackground source={BACKGROUND} style={{ flex: 1 }} imageStyle={{ resizeMode: 'contain' }}>
+        <View style={[{ flex: 1 }, { paddingTop }]}>
           {selectedBook ? (
             <AlbumSubBookView
               book={selectedBook}

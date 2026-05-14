@@ -15,12 +15,14 @@ import { useAudioContext } from '../../fresh/audio/AudioContext';
 import { HomeEmojiSky } from './HomeEmojiSky';
 import { GoldenPhoenixTrophyBadge } from '../../fresh/shared/GoldenPhoenixTrophyBadge';
 import { useGoldenPhoenixHolder } from '../../hooks/useGoldenPhoenixHolder';
+import { WinTypeBanner } from '../../fresh/shared/WinTypeBanner';
 
 const MENU_BACKGROUND = require('../../../assets/backgrounds/emojihome.png');
 const MIDDLE_LOGO     = require('../../../assets/images/logomiddle.png');
 
 const BTN_SOLO       = require('../../../assets/buttons/SoloButton.png');
 const BTN_PASS_PLAY  = require('../../../assets/buttons/PassandPlay.png');
+const BTN_MP         = require('../../../assets/buttons/mp.png');
 const BTN_BATTLE     = require('../../../assets/buttons/BattleButton.png');
 const BTN_MY_ALBUM   = require('../../../assets/buttons/MyAlbum.png');
 const BTN_HOW_TO     = require('../../../assets/buttons/Golden_How_to_Play_button.png');
@@ -29,6 +31,7 @@ const BTN_CTA        = require('../../../assets/buttons/Cta.png');
 type Props = {
   onGoToSolo: () => void;
   onGoToPassPlay: () => void;
+  onGoToMultiplayer: () => void;
   onGoToBattle: () => void;
   onGoToAlbum: () => void;
   onGoToHowToPlay: () => void;
@@ -41,6 +44,7 @@ type Props = {
 export default function HomeScreen({
   onGoToSolo,
   onGoToPassPlay,
+  onGoToMultiplayer,
   onGoToBattle,
   onGoToAlbum,
   onGoToHowToPlay,
@@ -74,6 +78,10 @@ export default function HomeScreen({
 
             <TouchableOpacity onPress={() => { playSound('button'); onGoToPassPlay(); }} activeOpacity={0.8} style={ss.btnSlot}>
               <Image source={BTN_PASS_PLAY} style={ss.btnImg} resizeMode="contain" />
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => { playSound('button'); onGoToMultiplayer(); }} activeOpacity={0.8} style={ss.btnSlot}>
+              <Image source={BTN_MP} style={ss.btnImg} resizeMode="contain" />
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => { playSound('button'); onGoToBattle(); }} activeOpacity={0.8} style={ss.btnSlot}>
@@ -119,6 +127,7 @@ export default function HomeScreen({
           </View>
         </View>
       </ImageBackground>
+      <WinTypeBanner />
     </View>
   );
 }

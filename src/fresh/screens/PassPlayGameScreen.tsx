@@ -6,9 +6,14 @@ import { useGoldenPhoenixHolder } from '../../hooks/useGoldenPhoenixHolder';
 import { useDelayedVisibility } from '../../hooks/useDelayedVisibility';
 import { GameModeScreenShell } from '../shared/GameModeScreenShell';
 import GameResultOverlay from '../shared/GameResultOverlay';
+import { GoldenPhoenixWinSplash } from '../shared/GoldenPhoenixWinSplash';
 import { isWizardOfOzRewardPreview } from '../../lib/jackpotRewards';
 import type { StickerId } from '../../types';
 import type { AlbumPuzzleId } from '../album/album.types';
+import { FRESH_PROFILE_COLORS } from '../profile/profileOptions';
+import { getAlbumStickerEmoji } from '../album/albumStickerLookup';
+
+const PHOENIX_IMAGE = require('../../../assets/CustomEmojis/phoenixemoji.png');
 
 type Props = {
   onBackToMenu: () => void;
@@ -48,10 +53,14 @@ export default function PassPlayGameScreen({
     rewardPreview,
     wagerPayout,
     goldenPhoenixHolderName,
+    isGoldenPhoenixWin,
     rollCounts,
     isHandoffVisible,
     rollFlow,
+    ep1Visible,
+    ep1EffectLabel,
     ep1AnimationEvent,
+    clearEp1,
     currentPowerSlots,
     selectedPowerSlotId,
     handleSquarePress,
@@ -72,13 +81,31 @@ export default function PassPlayGameScreen({
   });
   const phoenixHolderLabel = (goldenPhoenixHolderName ?? phoenixHolder) || 'OPEN';
 
+  const hasWager = passPlaySetup.selectedWagerId === 'epic' || passPlaySetup.selectedWagerId === 'legendary';
+  const p1WagerEmoji = getAlbumStickerEmoji(passPlaySetup.p1WagerStickerId);
+  const p2WagerEmoji = getAlbumStickerEmoji(passPlaySetup.p2WagerStickerId);
+
   const powerSlotsArray = ['slot1', 'slot2']
     .map((id) => {
       const slot = currentPowerSlots[id as 'slot1' | 'slot2'];
       if (!slot) return null;
-      return { slotId: id, icon: slot.icon, powerId: slot.powerId, isSelected: selectedPowerSlotId === id };
+      return {
+        slotId: id,
+        icon: slot.icon,
+        powerId: slot.powerId,
+        isSelected: selectedPowerSlotId === id,
+        usesLeft: slot.usesLeft,
+        isDisabled: slot.usesLeft <= 0,
+      };
     })
-    .filter(Boolean) as { slotId: string; icon: string; isSelected: boolean }[];
+    .filter(Boolean) as {
+      slotId: string;
+      icon: string;
+      powerId: string;
+      isSelected: boolean;
+      usesLeft: number;
+      isDisabled: boolean;
+    }[];
 
   const isResultOverlayVisible = useDelayedVisibility(winner !== null, 2000);
   const p1Name = activeProfile?.name ?? 'Player 1';
@@ -87,7 +114,12 @@ export default function PassPlayGameScreen({
   const nextPlayerName = currentPlayer === 'player1' ? p2Name : p1Name;
   const winnerName = winner?.player === 'player2' ? p2Name : p1Name;
   const resultTier = winner?.type === 'legendary' ? 'legendary' : winner?.type === 'epic' ? 'epic' : 'common';
-  const resultSubtitle = winner
+  const resultTitle = isGoldenPhoenixWin
+    ? `${winnerName} wins The Golden Phoenix!`
+    : winner ? `${winnerName} Wins` : 'Round Over';
+  const resultSubtitle = isGoldenPhoenixWin
+    ? 'The trophy has a new champion.'
+    : winner
     ? `${winnerName} wins${wagerPayout ? ` and takes ${wagerPayout.label}` : ''}.`
     : '';
   const isWizardOfOzJackpot = isWizardOfOzRewardPreview(rewardPreview);
@@ -106,6 +138,9 @@ export default function PassPlayGameScreen({
         lastMoveIndex,
         winningLineIndices,
         ep1AnimationEvent,
+        ep1StatusVisible: ep1Visible,
+        ep1StatusLabel: ep1EffectLabel,
+        onClearEp1Status: clearEp1,
         playerColors,
         playerTileColors,
         rollFlow,
@@ -132,11 +167,16 @@ export default function PassPlayGameScreen({
         handoffHighlightColor: rackHighlightColor,
         handoffCurrentPlayerName: currentPlayerName,
         handoffNextPlayerName: nextPlayerName,
-        topLeftImage: require('../../../assets/SharedAssets/wagercloud.png'),
-        topRightImage: require('../../../assets/SharedAssets/wagercloud.png'),
+        topLeftImage: null,
+        topLeftChalkLabel: hasWager ? 'WAGER' : 'NO WAGER',
+        topLeftWagerEmoji: p1WagerEmoji,
+        topLeftSubProfile: { name: p1Name, avatar: activeProfile?.avatar ?? '🙂', colorHex: FRESH_PROFILE_COLORS[activeProfile?.color ?? 'sunset'].swatch },
+        topRightChalkLabel: hasWager ? 'WAGER' : 'NO WAGER',
+        topRightWagerEmoji: p2WagerEmoji,
+        topRightSubProfile: { name: p2Name, avatar: secondaryProfile?.avatar ?? '🙂', colorHex: FRESH_PROFILE_COLORS[secondaryProfile?.color ?? 'ocean'].swatch },
         centerImage: require('../../../assets/images/trophy.png'),
         namePlateText: phoenixHolderLabel,
-        centerImageOffsetY: 0,
+        centerImageOffsetY: -0.015,
         namePlateOffsetY: 0.005,
         namePlateScale: 0.99,
         powerSlots: powerSlotsArray,
@@ -145,16 +185,17 @@ export default function PassPlayGameScreen({
         onHowToPress: onGoToHowTo,
       }}
     >
+      <GoldenPhoenixWinSplash visible={isGoldenPhoenixWin && winner !== null && !isResultOverlayVisible} />
       <GameResultOverlay
         visible={isResultOverlayVisible}
-        resultTitle={winner ? `${winnerName} Wins` : 'Round Over'}
+        resultTitle={resultTitle}
         resultSubtitle={resultSubtitle}
         resultTier={resultTier}
         rewardStickerId={rewardPreview?.stickerId ?? wagerPayout?.stickerId ?? null}
         rewardStickerCount={rewardPreview?.count ?? wagerPayout?.count ?? 0}
         rewardStickerLabel={rewardPreview?.stickerName ?? wagerPayout?.label ?? ''}
         rewardStickerKind={rewardPreview?.kind}
-        rewardImageSource={rewardPreview?.rewardImageSource}
+        rewardImageSource={isGoldenPhoenixWin ? PHOENIX_IMAGE : rewardPreview?.rewardImageSource}
         continueLabel="REMATCH"
         backLabel="DONE"
         onContinue={handleRematch}
@@ -163,4 +204,3 @@ export default function PassPlayGameScreen({
     </GameModeScreenShell>
   );
 }
-

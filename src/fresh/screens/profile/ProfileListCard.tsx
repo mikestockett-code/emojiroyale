@@ -1,6 +1,6 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { FRESH_PROFILE_COLORS } from '../../profile/useFreshProfiles';
+import { Pressable, Text, View } from 'react-native';
+import { FRESH_PROFILE_COLORS } from '../../profile/profileOptions';
 import type { FreshProfile } from '../../profile/types';
 import { profileStyles as styles } from './profileStyles';
 
@@ -49,14 +49,14 @@ export function ProfileListCard({
               {/* Name + badges */}
               <View style={styles.profileRowCopy}>
                 <Text style={styles.profileRowName}>{profile.name}</Text>
-                <View style={ss.badgeRow}>
-                  {isActive    && <Text style={ss.badgeActive}>ACTIVE</Text>}
-                  {isSecondary && <Text style={ss.badgeSecondary}>P2</Text>}
+                <View style={styles.badgeRow}>
+                  {isActive    && <Text style={styles.badgeActive}>ACTIVE</Text>}
+                  {isSecondary && <Text style={styles.badgeSecondary}>P2</Text>}
                 </View>
               </View>
 
               {/* Actions */}
-              <View style={ss.actionRow}>
+              <View style={styles.actionRow}>
                 <Pressable
                   onPress={() => onSetActiveProfile(profile.id)}
                   style={({ pressed }) => [styles.smallButton, isActive && styles.smallButtonActive, pressed && styles.pressed]}
@@ -70,7 +70,7 @@ export function ProfileListCard({
                   onPress={() => onSetSecondaryProfile(isSecondary ? null : profile.id)}
                   style={({ pressed }) => [styles.smallButton, isSecondary && styles.smallButtonSecondary, pressed && styles.pressed]}
                 >
-                  <Text style={[styles.smallButtonText, isSecondary && ss.whiteText]}>P2</Text>
+                  <Text style={[styles.smallButtonText, isSecondary && styles.whiteText]}>P2</Text>
                 </Pressable>
 
                 <Pressable
@@ -87,41 +87,3 @@ export function ProfileListCard({
     </View>
   );
 }
-
-const ss = StyleSheet.create({
-  badgeRow: {
-    flexDirection: 'row',
-    gap: 5,
-    marginTop: 2,
-  },
-  badgeActive: {
-    fontSize: 10,
-    fontWeight: '900',
-    letterSpacing: 0.8,
-    color: '#92400e',
-    backgroundColor: '#fde68a',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-    overflow: 'hidden',
-  },
-  badgeSecondary: {
-    fontSize: 10,
-    fontWeight: '900',
-    letterSpacing: 0.8,
-    color: '#fff',
-    backgroundColor: '#2563eb',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-    overflow: 'hidden',
-  },
-  actionRow: {
-    flexDirection: 'row',
-    gap: 6,
-    alignItems: 'center',
-  },
-  whiteText: {
-    color: '#fff',
-  },
-});

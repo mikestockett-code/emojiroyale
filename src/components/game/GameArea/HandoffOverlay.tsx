@@ -25,10 +25,10 @@ export function HandoffOverlay({ visible, winner, highlightColor, currentPlayerN
     }]}>
       <View style={{ flex: 1, justifyContent: 'center' }}>
         <LinearGradient
-          colors={['#ffd86b', '#c98c1a', '#5a3300']}
+          colors={[theme.gold, '#c98c1a', theme.darkGold]}
           style={[styles.cardRing, { shadowColor: highlightColor }]}
         >
-          <LinearGradient colors={['#1a0a06', '#2a1408', '#1a0a06']} style={styles.cardInner}>
+          <LinearGradient colors={[theme.deepBrown, theme.warmBrown, theme.deepBrown]} style={styles.cardInner}>
             <Text style={styles.kicker}>PASS AND PLAY</Text>
             <Text style={styles.title}>Pass to {nextPlayerName}</Text>
             <Text style={styles.subtitle}>

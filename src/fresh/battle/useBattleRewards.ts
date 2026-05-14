@@ -2,7 +2,6 @@ import { useCallback, useState } from 'react';
 import type { StickerId, WinnerInfo } from '../../types';
 import type { FreshSoloRewardPreview } from '../../lib/soloRewardRules';
 import { buildRoundRewardPreviews, grantRoundRewardPreviews } from '../../lib/sharedRoundRewards';
-import { createWizardOfOzRewardPreview, grantWizardOfOzJackpot } from '../../lib/jackpotRewards';
 import type { AlbumPuzzleId, AlbumPuzzlePieceCounts } from '../album/album.types';
 import {
   getBattleStageWagerTier,
@@ -28,20 +27,19 @@ export type BattleRewardOptions = {
 };
 
 type BattleRewardsOptions = {
+  cpuId: string;
   stageNumber: BattleJourneyStageNumber;
   rewardOptions: BattleRewardOptions;
 };
 
-export function useBattleRewards({ stageNumber, rewardOptions }: BattleRewardsOptions) {
+export function useBattleRewards({ cpuId, stageNumber, rewardOptions }: BattleRewardsOptions) {
   const [rewardPreview, setRewardPreview] = useState<FreshSoloRewardPreview | null>(null);
   const [pendingStickerRewards, setPendingStickerRewards] = useState<FreshSoloRewardPreview[]>([]);
-  const [isWizardOfOzJackpot, setIsWizardOfOzJackpot] = useState(false);
 
   const grantPlayerRoundRewards = useCallback((
     winner: NonNullable<WinnerInfo>,
     wasRollWin: boolean,
     battleComplete: boolean,
-    isWizardJackpot: boolean,
   ) => {
     const rewardPreviews = buildRoundRewardPreviews({
       winner,
@@ -65,16 +63,11 @@ export function useBattleRewards({ stageNumber, rewardOptions }: BattleRewardsOp
       return allPendingStickerRewards;
     });
 
-    const jackpotPreview = isWizardJackpot ? createWizardOfOzRewardPreview() : null;
-    setRewardPreview(jackpotPreview ?? rewardPreviews[0] ?? null);
-
-    if (isWizardJackpot) {
-      setIsWizardOfOzJackpot(true);
-      grantWizardOfOzJackpot(rewardOptions.activeProfileId, rewardOptions.onGrantAlbumSticker);
-    }
+    setRewardPreview(rewardPreviews[0] ?? null);
 
     if (battleComplete) {
       void completeBattleJourneyStage(
+        cpuId as 'todd' | 'nico',
         stageNumber,
         allPendingStickerRewards,
         rewardOptions.activeProfileId,
@@ -82,7 +75,7 @@ export function useBattleRewards({ stageNumber, rewardOptions }: BattleRewardsOp
         rewardOptions.onGrantAlbumPuzzlePiece,
       );
     }
-  }, [rewardOptions, stageNumber]);
+  }, [cpuId, rewardOptions, stageNumber]);
 
   const clearCpuBattleCompleteRewards = useCallback(() => {
     setPendingStickerRewards([]);
@@ -91,23 +84,19 @@ export function useBattleRewards({ stageNumber, rewardOptions }: BattleRewardsOp
 
   const clearRewardPreview = useCallback(() => {
     setRewardPreview(null);
-    setIsWizardOfOzJackpot(false);
   }, []);
 
   const resetBattleRewards = useCallback(() => {
     setRewardPreview(null);
     setPendingStickerRewards([]);
-    setIsWizardOfOzJackpot(false);
   }, []);
 
   return {
     rewardPreview,
     pendingStickerRewards,
-    isWizardOfOzJackpot,
     grantPlayerRoundRewards,
     clearCpuBattleCompleteRewards,
     clearRewardPreview,
     resetBattleRewards,
   };
 }
-

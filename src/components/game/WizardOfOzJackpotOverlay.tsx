@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import { Animated, Image, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAudioContext } from '../../fresh/audio/AudioContext';
+import { theme } from '../../fresh/shared/luxuryTheme';
 
 const WIZARD_IMAGE = require('../../../assets/CustomEmojis/the_wiz.png');
 
@@ -111,8 +112,8 @@ export function WizardOfOzJackpotOverlay({ visible }: { visible: boolean }) {
       <Animated.View style={[styles.ring, styles.ringTwo, { opacity: ringOpacity, transform: [{ scale: ringScale }] }]} />
 
       <Animated.View style={[styles.heroWrap, { transform: [{ scale: imageScale }] }]}>
-        <LinearGradient colors={['#86efac', '#ffd86b', '#22c55e']} style={styles.heroRing}>
-          <LinearGradient colors={['#061a0b', '#1a0a06', '#092112']} style={styles.heroInner}>
+        <LinearGradient colors={['#86efac', theme.gold, '#22c55e']} style={styles.heroRing}>
+          <LinearGradient colors={['#061a0b', theme.deepBrown, '#092112']} style={styles.heroInner}>
             <Text style={styles.kicker}>IMPOSSIBLE JACKPOT</Text>
             <Image source={WIZARD_IMAGE} resizeMode="contain" style={styles.wizardImage} />
             <Text style={styles.title}>THE WIZARD OF OZ</Text>
@@ -150,7 +151,7 @@ const styles = StyleSheet.create({
     width: 520,
     height: 520,
     borderRadius: 260,
-    borderColor: '#ffd86b',
+    borderColor: theme.gold,
     borderStyle: 'dashed',
   },
   heroWrap: {
@@ -183,7 +184,7 @@ const styles = StyleSheet.create({
     height: 190,
   },
   title: {
-    color: '#ffd86b',
+    color: theme.gold,
     fontSize: 31,
     fontWeight: '900',
     textAlign: 'center',
@@ -216,7 +217,7 @@ const styles = StyleSheet.create({
     borderColor: '#86efac',
   },
   prizeText: {
-    color: '#ffd86b',
+    color: theme.gold,
     fontSize: 10,
     fontWeight: '900',
     letterSpacing: 1,

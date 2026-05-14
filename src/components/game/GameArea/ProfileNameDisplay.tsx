@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, View } from 'react-native';
-import { chalkColor } from './chalkColors';
+import { chalkColor, chalkTextStyle } from './chalkColors';
 import type { TopPanelLayout } from './topPanelLayout';
 
 type Props = {
@@ -28,7 +28,7 @@ export function ProfileNameDisplay({ width, height, layout, profileName }: Props
       {profileName.toUpperCase().split('').map((char, i) => {
         const c = char === ' ' ? 'transparent' : chalkColor(i);
         return (
-          <Text key={i} style={{ color: c, fontWeight: '900', fontSize: profileName.length > 7 ? 56 : 60, opacity: 0.93, textShadowColor: c, textShadowOffset: { width: 1, height: 1 }, textShadowRadius: 4 }}>{char}</Text>
+          <Text key={i} style={[chalkTextStyle(i, profileName.length > 7 ? 56 : 60, 4), { opacity: 0.93, textShadowOffset: { width: 1, height: 1 }, color: c, textShadowColor: c }]}>{char}</Text>
         );
       })}
     </View>

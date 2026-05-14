@@ -9,7 +9,7 @@ export type ProfileScreenProps = ProfileNavigation & {
     name: string,
     avatar: string,
     color: FreshProfileColor
-  ) => { ok: true } | { ok: false; error: string };
+  ) => { ok: true; profileId: string } | { ok: false; error: string };
   onSetActiveProfile: (profileId: string) => void;
   onSetSecondaryProfile: (profileId: string | null) => void;
   onDeleteProfile: (profileId: string) => void;

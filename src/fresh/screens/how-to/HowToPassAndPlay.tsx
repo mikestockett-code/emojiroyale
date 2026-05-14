@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { howToStyles as s } from './styles';
+import { WinTypeKey } from '../../shared/WinTypeKey';
 
 type Props = {
   onBack: () => void;
@@ -33,6 +34,8 @@ export default function HowToPassAndPlay({ onBack }: Props) {
         <View style={s.card}>
           <Text style={s.sectionNumber}>Section 2</Text>
           <Text style={s.sectionTitle}>How to Win</Text>
+          <WinTypeKey />
+          <View style={s.divider} />
           <View style={s.winRow}>
             <Text style={s.winLabel}>Standard Win</Text>
             <Text style={s.winDesc}>4 of your emojis in a row — horizontal, vertical, or diagonal.</Text>

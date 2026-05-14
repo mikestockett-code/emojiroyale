@@ -1,7 +1,7 @@
 import React from 'react';
 import { Text, View } from 'react-native';
 import type { AlbumStickerDefinition } from '../album/album.types';
-import { soloRecapStyles as styles } from './soloRecapStyles';
+import { luxuryResultStyles as styles } from '../shared/luxuryResultStyles';
 
 type Props = {
   highlights: Array<{ sticker: AlbumStickerDefinition; count: number }>;

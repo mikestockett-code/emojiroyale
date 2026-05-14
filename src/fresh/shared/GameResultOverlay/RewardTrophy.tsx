@@ -2,6 +2,7 @@ import React from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StickerTile } from '../../../components/game/StickerTile';
+import { theme } from '../luxuryTheme';
 import type { StickerId } from '../../../types';
 import type { ImageSourcePropType } from 'react-native';
 
@@ -30,10 +31,10 @@ export function RewardTrophy({ stickerId, count, label, kind, imageSource, ring,
   const rarityLabel = kind ? (KIND_LABEL[kind] ?? kind.toUpperCase()) : null;
   return (
     <LinearGradient
-      colors={['#ffd86b', ring, '#5a3300']}
+      colors={[theme.gold, ring, theme.darkGold]}
       style={[styles.outer, { shadowColor }]}
     >
-      <LinearGradient colors={['#18090a', '#2a1408']} style={styles.inner}>
+      <LinearGradient colors={['#18090a', theme.warmBrown]} style={styles.inner}>
         <Text style={styles.youWon}>YOU WON</Text>
         <View style={[styles.disc, { borderColor: ring, shadowColor }]}>
           {imageSource ? (
@@ -87,7 +88,7 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '900',
     letterSpacing: 2,
-    color: '#ffd86b',
+    color: theme.gold,
     textShadowColor: '#000',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 0,
@@ -109,18 +110,18 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '900',
     letterSpacing: 0.5,
-    color: '#ffd86b',
-    textShadowColor: '#3a1a00',
+    color: theme.gold,
+    textShadowColor: theme.ringShadow,
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 0,
     textAlign: 'center',
   },
   newBadge: {
-    backgroundColor: '#ffd86b',
+    backgroundColor: theme.gold,
     borderRadius: 999,
     paddingHorizontal: 8,
     paddingVertical: 3,
-    shadowColor: '#ffd86b',
+    shadowColor: theme.gold,
     shadowOpacity: 0.7,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 0 },
@@ -130,14 +131,14 @@ const styles = StyleSheet.create({
     fontSize: 8,
     fontWeight: '900',
     letterSpacing: 1.4,
-    color: '#1a0a04',
+    color: theme.deepBrown,
   },
   cornerDot: {
     position: 'absolute',
     width: 8, height: 8,
     borderRadius: 4,
     backgroundColor: '#c98c1a',
-    shadowColor: '#ffd86b',
+    shadowColor: theme.gold,
     shadowOpacity: 0.6,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 0 },

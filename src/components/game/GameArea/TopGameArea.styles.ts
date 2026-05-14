@@ -1,4 +1,5 @@
 import { StyleSheet } from 'react-native';
+import { theme } from '../../../fresh/shared/luxuryTheme';
 
 export const topPanelStyles = StyleSheet.create({
   timerText: {
@@ -14,7 +15,7 @@ export const topPanelStyles = StyleSheet.create({
     textAlign: 'center',
     fontWeight: '900',
     letterSpacing: 1.5,
-    color: '#ffd86b',
+    color: theme.gold,
     textShadowColor: '#000',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 3,

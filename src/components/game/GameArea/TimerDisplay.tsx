@@ -28,19 +28,22 @@ export function TimerDisplay({
   const timerBoxWidth = layout.timerSize * 1.677;
   const timerLeft = width / 2 - timerBoxWidth / 2;
   const timerTop = layout.timerCenterY - layout.timerSize / 2;
-  const centerImageSize = layout.timerSize * 1.9214;
+  const centerImageSize = layout.timerSize * 2.642;
 
   const stealFlash = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    if (!isTimerStealing) return;
-    Animated.sequence([
-      Animated.timing(stealFlash, { toValue: 1, duration: 120, useNativeDriver: true }),
-      Animated.timing(stealFlash, { toValue: 0, duration: 120, useNativeDriver: true }),
-      Animated.timing(stealFlash, { toValue: 1, duration: 120, useNativeDriver: true }),
-      Animated.timing(stealFlash, { toValue: 0, duration: 120, useNativeDriver: true }),
-      Animated.timing(stealFlash, { toValue: 1, duration: 120, useNativeDriver: true }),
-      Animated.timing(stealFlash, { toValue: 0, duration: 400, useNativeDriver: true }),
-    ]).start();
+    if (!isTimerStealing) {
+      stealFlash.setValue(0);
+      return;
+    }
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(stealFlash, { toValue: 1,    duration: 280, useNativeDriver: true }),
+        Animated.timing(stealFlash, { toValue: 0.12, duration: 380, useNativeDriver: true }),
+      ]),
+    );
+    pulse.start();
+    return () => pulse.stop();
   }, [isTimerStealing, stealFlash]);
 
   if (centerImage) {

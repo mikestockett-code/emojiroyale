@@ -3,7 +3,7 @@ import { useAudio } from '../../hooks/useAudio';
 import type { AudioSourceKey } from '../../lib/audio';
 
 type AudioContextValue = {
-  playSound: (key: AudioSourceKey) => void;
+  playSound: (key: AudioSourceKey, volume?: number) => void;
   stopResultAudio: () => void;
   duckMusic: () => void;
   unduckMusic: () => void;

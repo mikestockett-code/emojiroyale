@@ -12,9 +12,8 @@
 // - Hold turn systems.
 // - Know rule details for each mode.
 
-import React, { useState } from 'react';
+import React, { useCallback } from 'react';
 import { APP_ROUTES } from './routes';
-import type { AppRoute } from '../types/navigation';
 import MainMenuScreen from '../screens/MainMenuScreen';
 import HowToPlayMain from '../screens/how-to/HowToPlayMain';
 import HowToSolo from '../screens/how-to/HowToSolo';
@@ -27,23 +26,22 @@ import BattleSubmenuScreen from '../screens/BattleSubmenuScreen';
 import SoloGameScreen from '../screens/SoloGameScreen';
 import PassPlayGameScreen from '../screens/PassPlayGameScreen';
 import BattleGameScreen from '../screens/BattleGameScreen';
+import MultiplayerLobbyScreen from '../screens/multiplayer/MultiplayerLobbyScreen';
+import OnlineGameScreen from '../screens/multiplayer/OnlineGameScreen';
 import AlbumScreen from '../screens/AlbumScreen';
 import ProfileScreenShell from '../screens/ProfileScreenShell';
-import type { FreshPassPlaySetup } from '../passplay/passPlaySetup.types';
-import type { FreshBattleSetup } from '../battle/battleSetup.types';
-import type { BattleJourneyStageNumber } from '../battle/battleRewardRules';
 import type { FreshProfile, FreshProfileColor } from '../profile/types';
-import type { FreshSoloSetup } from '../solo/soloSetup.types';
-import { createFreshSoloSetup } from '../solo/soloWagerFactory';
 import { useAudioContext } from '../audio/AudioContext';
+import { useMultiplayerRoom } from '../../multiplayer/useMultiplayerRoom';
 import type { StickerId } from '../../types';
 import type { AlbumPuzzleId } from '../album/album.types';
+import { useModeRouteState } from './useModeRouteState';
 
 type Props = {
   profiles: FreshProfile[];
   activeProfileId: string | null;
   secondaryProfileId: string | null;
-  onCreateProfile: (name: string, avatar: string, color: FreshProfileColor) => { ok: true } | { ok: false; error: string };
+  onCreateProfile: (name: string, avatar: string, color: FreshProfileColor) => { ok: true; profileId: string } | { ok: false; error: string };
   onSetActiveProfile: (profileId: string) => void;
   onSetSecondaryProfile: (profileId: string | null) => void;
   onDeleteProfile: (profileId: string) => void;
@@ -74,48 +72,42 @@ export default function AppRouter({
   profilesReady,
 }: Props) {
   const { toggleMute } = useAudioContext();
-  const [currentRoute, setCurrentRoute] = useState<AppRoute>(APP_ROUTES.menu);
-  const [profileReturnRoute, setProfileReturnRoute] = useState<AppRoute>(APP_ROUTES.menu);
-  const [passPlayEntryMode, setPassPlayEntryMode] = useState<'normal' | 'goldenPhoenix'>('normal');
-  const [soloSetup, setSoloSetup] = useState<FreshSoloSetup>(() => createFreshSoloSetup('practice'));
-  const [battleSetup, setBattleSetup] = useState<FreshBattleSetup>({
-    playerProfileId: null,
-    cpuId: 'todd',
-    stageNumber: 1,
-    powerSlotIds: { slot1: null, slot2: null },
-  });
-  const [battleJourneyStageNumber, setBattleJourneyStageNumber] = useState<BattleJourneyStageNumber>(1);
-  const [passPlaySetup, setPassPlaySetup] = useState<FreshPassPlaySetup>({
-    selectedWagerId: 'none',
-    player1ProfileId: null,
-    player2ProfileId: null,
-    powerSlotIds: {
-      player1: { slot1: null, slot2: null },
-      player2: { slot1: null, slot2: null },
-    },
-  });
+  const mpRoom = useMultiplayerRoom();
+  const {
+    currentRoute,
+    setCurrentRoute,
+    profileReturnRoute,
+    passPlayEntryMode,
+    soloSetup,
+    setSoloSetup,
+    battleSetup,
+    passPlaySetup,
+    openProfileScreen,
+    openPassPlaySubmenu,
+    startSoloGame,
+    startPassPlayGame,
+    proceedToBattleSetup,
+    startBattleGame,
+    goToNextBattleStage,
+    returnToBattleJourney,
+  } = useModeRouteState();
   const activeProfile = profiles.find((profile) => profile.id === activeProfileId) ?? profiles[0] ?? null;
   const secondaryProfile = profiles.find((profile) => profile.id === secondaryProfileId) ?? null;
 
-  const openProfileScreen = (fromRoute: AppRoute) => {
-    setProfileReturnRoute(fromRoute);
-    setCurrentRoute(APP_ROUTES.profile);
-  };
-
-  const openPassPlaySubmenu = (entryMode: 'normal' | 'goldenPhoenix' = 'normal') => {
-    setPassPlayEntryMode(entryMode);
-    setCurrentRoute(APP_ROUTES.passPlaySubmenu);
-  };
+  const openOnlineGame = useCallback(() => {
+    setCurrentRoute(APP_ROUTES.onlineGame);
+  }, [setCurrentRoute]);
 
   if (!profilesReady) {
     return null;
   }
 
-if (currentRoute === APP_ROUTES.menu) {
+  if (currentRoute === APP_ROUTES.menu) {
     return (
       <MainMenuScreen
         onGoToSoloSubmenu={() => setCurrentRoute(APP_ROUTES.soloSubmenu)}
         onGoToPassPlaySubmenu={() => openPassPlaySubmenu('normal')}
+        onGoToMultiplayer={() => setCurrentRoute(APP_ROUTES.multiplayerLobby)}
         onGoToBattleSubmenu={() => setCurrentRoute(APP_ROUTES.battleJourney)}
         onGoToAlbum={() => setCurrentRoute(APP_ROUTES.album)}
         onGoToHowToPlay={() => setCurrentRoute(APP_ROUTES.howTo)}
@@ -159,10 +151,7 @@ if (currentRoute === APP_ROUTES.menu) {
     return (
       <SoloSubmenuScreen
         onBackToMenu={() => setCurrentRoute(APP_ROUTES.menu)}
-        onStartSoloGame={(nextSoloSetup) => {
-          setSoloSetup(nextSoloSetup);
-          setCurrentRoute(APP_ROUTES.soloGame);
-        }}
+        onStartSoloGame={startSoloGame}
         onOpenProfiles={() => openProfileScreen(APP_ROUTES.soloSubmenu)}
         activeProfileAvatar={activeProfile?.avatar ?? '🙂'}
         activeProfile={activeProfile}
@@ -174,10 +163,7 @@ if (currentRoute === APP_ROUTES.menu) {
     return (
       <PassPlaySubmenuScreen
         onBackToMenu={() => setCurrentRoute(APP_ROUTES.menu)}
-        onStartPassPlayGame={(setup) => {
-          setPassPlaySetup(setup);
-          setCurrentRoute(APP_ROUTES.passPlayGame);
-        }}
+        onStartPassPlayGame={startPassPlayGame}
         onOpenProfiles={() => openProfileScreen(APP_ROUTES.passPlaySubmenu)}
         activeProfile={activeProfile}
         secondaryProfile={secondaryProfile}
@@ -186,14 +172,36 @@ if (currentRoute === APP_ROUTES.menu) {
     );
   }
 
+  if (currentRoute === APP_ROUTES.multiplayerLobby) {
+    return (
+      <MultiplayerLobbyScreen
+        mpRoom={mpRoom}
+        activeProfile={activeProfile}
+        onBackToMenu={() => {
+          mpRoom.leaveRoom().finally(() => setCurrentRoute(APP_ROUTES.menu));
+        }}
+        onStartOnlineGame={openOnlineGame}
+      />
+    );
+  }
+
+  if (currentRoute === APP_ROUTES.onlineGame) {
+    return (
+      <OnlineGameScreen
+        mpRoom={mpRoom}
+        activeProfile={activeProfile}
+        onBackToMenu={() => {
+          mpRoom.leaveRoom().finally(() => setCurrentRoute(APP_ROUTES.menu));
+        }}
+      />
+    );
+  }
+
   if (currentRoute === APP_ROUTES.battleJourney) {
     return (
       <BattleJourneyScreen
         onBackToMenu={() => setCurrentRoute(APP_ROUTES.menu)}
-        onProceedToSetup={(stageNumber) => {
-          setBattleJourneyStageNumber(stageNumber);
-          setCurrentRoute(APP_ROUTES.battleSubmenu);
-        }}
+        onProceedToSetup={proceedToBattleSetup}
         activeProfile={activeProfile}
       />
     );
@@ -203,10 +211,7 @@ if (currentRoute === APP_ROUTES.menu) {
     return (
       <BattleSubmenuScreen
         onBackToMenu={() => setCurrentRoute(APP_ROUTES.menu)}
-        onStartBattleGame={(setup) => {
-          setBattleSetup({ ...setup, cpuId: 'todd', stageNumber: battleJourneyStageNumber });
-          setCurrentRoute(APP_ROUTES.battleGame);
-        }}
+        onStartBattleGame={startBattleGame}
         activeProfile={activeProfile}
       />
     );
@@ -248,13 +253,8 @@ if (currentRoute === APP_ROUTES.menu) {
     return (
       <BattleGameScreen
         onBackToMenu={() => setCurrentRoute(APP_ROUTES.menu)}
-        onReloadBattle={() => setCurrentRoute(APP_ROUTES.battleJourney)}
-        onNextBattleStage={() => {
-          const currentStage = battleSetup.stageNumber ?? 1;
-          const nextStage = currentStage >= 3 ? 1 : ((currentStage + 1) as BattleJourneyStageNumber);
-          setBattleJourneyStageNumber(nextStage);
-          setCurrentRoute(APP_ROUTES.battleSubmenu);
-        }}
+        onReloadBattle={returnToBattleJourney}
+        onNextBattleStage={goToNextBattleStage}
         battleSetup={battleSetup}
         activeProfile={activeProfile}
         onGrantAlbumSticker={onGrantAlbumSticker}
@@ -272,6 +272,7 @@ if (currentRoute === APP_ROUTES.menu) {
     <MainMenuScreen
       onGoToSoloSubmenu={() => setCurrentRoute(APP_ROUTES.soloSubmenu)}
       onGoToPassPlaySubmenu={() => openPassPlaySubmenu('normal')}
+      onGoToMultiplayer={() => setCurrentRoute(APP_ROUTES.multiplayerLobby)}
       onGoToBattleSubmenu={() => setCurrentRoute(APP_ROUTES.battleJourney)}
       onGoToAlbum={() => setCurrentRoute(APP_ROUTES.album)}
       onGoToHowToPlay={() => setCurrentRoute(APP_ROUTES.howTo)}

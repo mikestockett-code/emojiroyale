@@ -17,10 +17,14 @@ export function useEP1Powers(
     setSlotUsed({ slot1: false, slot2: false });
   }, []);
 
+  const refill = useCallback((slotId: BattlePowerSlotId) => {
+    setSlotUsed((cur) => ({ ...cur, [slotId]: false }));
+  }, []);
+
   const usesLeft = useCallback(
     (slotId: BattlePowerSlotId) => (slotIds[slotId] && !slotUsed[slotId] ? 1 : 0),
     [slotIds, slotUsed],
   );
 
-  return { slotUsed, consume, reset, usesLeft };
+  return { slotUsed, consume, reset, refill, usesLeft };
 }

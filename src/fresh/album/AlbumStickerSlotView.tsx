@@ -8,7 +8,7 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
-import { albumBookStyles as styles } from '../shared/albumBookStyles';
+import styles from './albumStyles';
 import type { AlbumStickerSlot } from './album.types';
 
 type Props = {
@@ -54,7 +54,7 @@ export function AlbumStickerSlotView({ slot }: Props) {
         style={[
           styles.albumEmoji,
           animStyle,
-          !slot.collected && styles.albumEmojiSilhouette,
+          !slot.collected && { opacity: 0.13 },
         ]}
       >
         {slot.emoji}

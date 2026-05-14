@@ -5,15 +5,23 @@ import type { FreshProfile, FreshProfileColor } from './types';
 import { createFreshProfileId, hasBlockedProfileNameWord } from './profileNameFilter';
 import { storageGetItem, storageSetItem } from '../../lib/storage';
 
-export const FRESH_PROFILE_AVATARS = ['😀', '😎', '🥳', '🔥', '👑', '🌈', '🐶', '⭐', '⚡', '🦄'];
+const STARTER_ALBUM_COUNTS: Record<string, number> = {
+  'album-bronze-common-common-1': 25,
+  'album-bronze-epic-common-1': 1,
+  'album-bronze-legendary-common-1': 1,
+};
 
-export const FRESH_PROFILE_COLORS: Record<FreshProfileColor, { label: string; swatch: string; bg: string }> = {
-  sunset: { label: 'Sunset', swatch: '#f97316', bg: '#ffedd5' },
-  ocean: { label: 'Ocean', swatch: '#2563eb', bg: '#dbeafe' },
-  mint: { label: 'Mint', swatch: '#059669', bg: '#d1fae5' },
-  violet: { label: 'Violet', swatch: '#7c3aed', bg: '#ede9fe' },
-  ember: { label: 'Ember', swatch: '#dc2626', bg: '#fee2e2' },
-  slate: { label: 'Slate', swatch: '#334155', bg: '#e2e8f0' },
+const STARTER_POWERS: Record<string, number> = {
+  'power-torture-rack': 1,
+  'power-clear-row': 1,
+  'power-clear-column': 1,
+  'power-remove-emoji': 1,
+  'power-four-square': 1,
+  'power-tornado': 1,
+  'power-plus-10-seconds': 1,
+  'power-clock-freeze': 1,
+  'power-reverse-time': 1,
+  'power-rerack': 1,
 };
 
 const FRESH_PROFILES_STORAGE_KEY = 'fresh.profiles.v1';
@@ -126,11 +134,13 @@ export function useFreshProfiles() {
       avatar,
       color,
       createdAt: Date.now(),
+      albumCounts: { ...STARTER_ALBUM_COUNTS },
+      ownedPowers: { ...STARTER_POWERS },
     };
 
     setProfiles((current) => [...current, nextProfile]);
     setActiveProfileId(nextProfile.id);
-    return { ok: true as const };
+    return { ok: true as const, profileId: nextProfile.id };
   };
 
   const deleteProfile = (profileId: string) => {

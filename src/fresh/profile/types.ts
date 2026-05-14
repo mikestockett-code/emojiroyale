@@ -8,6 +8,7 @@ export type FreshProfile = {
   createdAt: number;
   albumCounts?: Record<string, number>;
   albumPuzzlePieces?: Record<string, Record<string, number>>;
+  ownedPowers?: Record<string, number>;
   soloHighScore?: number;
   favoriteStickerId?: string;
 };

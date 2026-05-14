@@ -2,7 +2,7 @@ import React from 'react';
 import { Image, Text, View } from 'react-native';
 import type { ImageSourcePropType } from 'react-native';
 import type { StickerId } from '../../types';
-import { soloRecapStyles as styles } from './soloRecapStyles';
+import { luxuryResultStyles as styles } from '../shared/luxuryResultStyles';
 
 type Props = {
   rewardStickerId?: StickerId | null;

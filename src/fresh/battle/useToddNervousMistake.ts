@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { BoardCell, Player, StickerId } from '../../types';
 import type { BattleCpuId } from './battleCpuConfig';
-import { getRandomToddNervousLine } from './battleCpuConfig';
+import { getCpuPersonality } from './battleCpuConfig';
 import type { CpuTurnContext } from '../../hooks/useSoloCpu';
+import { useAudioContext } from '../audio/AudioContext';
 import { CPU_ROLL_FINISH_DELAY_MS, CPU_PLACE_FINISH_DELAY_MS } from '../../hooks/useSoloCpu';
 import type { CpuRollFlow } from '../../hooks/rollFlowTypes';
 import { applyRandomGameBoardEffect, createGameBoardEffectEvent } from '../../lib/gameBoardEffects';
@@ -34,10 +35,11 @@ export type ToddTurnDeps = {
   playerRacks: Record<Player, StickerId[]>;
   rollFlow: CpuRollFlow | undefined;
   roundNumber: number;
+  timerFrozen: boolean;
   setBoard: (b: BoardCell[]) => void;
   setPlayerRacks: (r: Record<Player, StickerId[]>) => void;
   setLastMoveIndex: (i: number | null) => void;
-  showEp1Launch: (event: GameBoardEffectEvent | string) => void;
+  showEp1Launch: (event: GameBoardEffectEvent | string, showStatus?: boolean, statusLabel?: string) => void;
   addTimerSeconds: (n: number) => void;
 };
 
@@ -54,6 +56,8 @@ function getRandomTimeWarpLine() {
 }
 
 export function useToddNervousMistake(cpuId: BattleCpuId) {
+  const { playSound } = useAudioContext();
+  const toddLines = getCpuPersonality('todd').lines.nervous;
   const [mistakeTurns, setMistakeTurns] = useState(0);
   const [thoughtText, setThoughtText] = useState<string | null>(null);
   const [isTimerStealing, setIsTimerStealing] = useState(false);
@@ -62,22 +66,46 @@ export function useToddNervousMistake(cpuId: BattleCpuId) {
   const [cpuForcePower, setCpuForcePower] = useState<'timeWarp' | 'clearRow' | null>(null);
   const thoughtTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stealTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dropTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastMistakeEp1EffectIdRef = useRef<GameBoardEffectId | null>(null);
 
   useEffect(() => () => {
     if (thoughtTimerRef.current) clearTimeout(thoughtTimerRef.current);
     if (stealTimerRef.current) clearTimeout(stealTimerRef.current);
+    if (dropTimerRef.current) clearTimeout(dropTimerRef.current);
+  }, []);
+
+  const showThoughtText = useCallback((line: string | null, durationMs = 3200) => {
+    if (thoughtTimerRef.current) clearTimeout(thoughtTimerRef.current);
+    setThoughtText(line);
+    if (!line) {
+      thoughtTimerRef.current = null;
+      return;
+    }
+    thoughtTimerRef.current = setTimeout(() => {
+      setThoughtText(null);
+      thoughtTimerRef.current = null;
+    }, durationMs);
   }, []);
 
   const fireTimeWarp = useCallback((addTimerSeconds: (n: number) => void) => {
-    addTimerSeconds(-30);
-    setThoughtText(getRandomTimeWarpLine());
-    setIsTimerStealing(true);
+    // Sound fires first so it grabs the player's attention before the visual
+    playSound('warpSpeed');
     if (thoughtTimerRef.current) clearTimeout(thoughtTimerRef.current);
     if (stealTimerRef.current) clearTimeout(stealTimerRef.current);
-    thoughtTimerRef.current = setTimeout(() => { setThoughtText(null); }, 2800);
-    stealTimerRef.current = setTimeout(() => { setIsTimerStealing(false); }, 1500);
-  }, []);
+    if (dropTimerRef.current) clearTimeout(dropTimerRef.current);
+    // Short pause → red clock beats → player looks at timer
+    stealTimerRef.current = setTimeout(() => {
+      setIsTimerStealing(true);  // stays red for the rest of the round (resetTodd clears it)
+      setThoughtText(getRandomTimeWarpLine());
+    }, 180);
+    // Clock drops AFTER player sees the red animation start
+    dropTimerRef.current = setTimeout(() => {
+      addTimerSeconds(-15);
+    }, 480);
+    // Thought text clears after a few seconds; red clock persists until round reset
+    thoughtTimerRef.current = setTimeout(() => { setThoughtText(null); }, 3200);
+  }, [playSound]);
 
   const triggerPlayerPowerResponse = useCallback(() => {
     const available: Array<'timeWarp' | 'clearRow'> = [];
@@ -87,31 +115,39 @@ export function useToddNervousMistake(cpuId: BattleCpuId) {
       setCpuForcePower(available[Math.floor(Math.random() * available.length)]!);
     } else if (cpuId === 'todd') {
       setMistakeTurns(1);
-      setThoughtText(getRandomToddNervousLine());
-      if (thoughtTimerRef.current) clearTimeout(thoughtTimerRef.current);
-      thoughtTimerRef.current = setTimeout(() => {
-        setThoughtText(null);
-        thoughtTimerRef.current = null;
-      }, 2800);
+      showThoughtText(toddLines[Math.floor(Math.random() * toddLines.length)] ?? '', 2800);
     }
-  }, [cpuId, cpuTimeWarpUsed, cpuClearRowUsed]);
+  }, [cpuId, cpuTimeWarpUsed, cpuClearRowUsed, showThoughtText, toddLines]);
 
-  const resetTodd = useCallback(() => {
+  const resetToddRound = useCallback(() => {
     setMistakeTurns(0);
     setThoughtText(null);
     setIsTimerStealing(false);
-    setCpuTimeWarpUsed(false);
-    setCpuClearRowUsed(false);
     setCpuForcePower(null);
     lastMistakeEp1EffectIdRef.current = null;
     if (thoughtTimerRef.current) { clearTimeout(thoughtTimerRef.current); thoughtTimerRef.current = null; }
     if (stealTimerRef.current) { clearTimeout(stealTimerRef.current); stealTimerRef.current = null; }
+    if (dropTimerRef.current) { clearTimeout(dropTimerRef.current); dropTimerRef.current = null; }
   }, []);
 
+  const resetTodd = useCallback(() => {
+    resetToddRound();
+    setCpuTimeWarpUsed(false);
+    setCpuClearRowUsed(false);
+  }, [resetToddRound]);
+
   const executeTurn = useCallback((ctx: CpuTurnContext, deps: ToddTurnDeps): boolean => {
-    const { addTimerSeconds, setBoard, setLastMoveIndex, showEp1Launch, playerRacks, rollFlow, roundNumber, setPlayerRacks } = deps;
+    const { addTimerSeconds, setBoard, setLastMoveIndex, showEp1Launch, playerRacks, rollFlow, roundNumber, setPlayerRacks, timerFrozen } = deps;
+
+    // Never use powers or rolls on the first CPU move of the round
+    const cpuTilesOnBoard = ctx.board.filter(c => c?.player === 'player2').length;
+    if (cpuTilesOnBoard === 0) return false;
 
     if (cpuForcePower === 'timeWarp') {
+      if (timerFrozen) {
+        setCpuForcePower(null);
+        return false;
+      }
       setCpuForcePower(null);
       setCpuTimeWarpUsed(true);
       fireTimeWarp(addTimerSeconds);
@@ -125,7 +161,11 @@ export function useToddNervousMistake(cpuId: BattleCpuId) {
       if (clearResult) {
         setBoard(clearResult.nextBoard);
         setLastMoveIndex(clearResult.targetIndex);
-        showEp1Launch(createGameBoardEffectEvent('clearRow', 'Clear Row', clearResult.affectedIndices, ctx.board));
+        showEp1Launch(
+          createGameBoardEffectEvent('clearRow', 'Clear Row', clearResult.affectedIndices, ctx.board),
+          true,
+          'Todd used Clear Row emoji power',
+        );
         ctx.finishTurn(clearResult.nextBoard);
       } else {
         ctx.finishTurn(ctx.board, CPU_ROLL_FINISH_DELAY_MS);
@@ -143,7 +183,7 @@ export function useToddNervousMistake(cpuId: BattleCpuId) {
 
       const mistakePool = [
         cpuTileIndices.length > 0 ? 'selfErase' : null,
-        cpuTileIndices.length > 0 ? 'selfEp1' : null,
+        cpuTileIndices.length > 0 && !cpuClearRowUsed ? 'selfEp1' : null,
         cpuRollTargets.length > 0 && rollFlow ? 'rollOwnToPlayer' : null,
         emptySpots.length > 0 && stickerToPlace ? 'randomPlace' : null,
         'helpClock',
@@ -158,18 +198,27 @@ export function useToddNervousMistake(cpuId: BattleCpuId) {
         nextBoard[target] = null;
         setBoard(nextBoard);
         setLastMoveIndex(target);
-        showEp1Launch(createGameBoardEffectEvent('removeTile', 'Remove Tile', [target], ctx.board));
+        showEp1Launch(
+          createGameBoardEffectEvent('removeTile', 'Remove Tile', [target], ctx.board),
+          true,
+          'Todd used Remove Tile emoji power',
+        );
         ctx.finishTurn(nextBoard);
         return true;
       }
       if (mistake === 'selfEp1') {
         const target = cpuTileIndices[Math.floor(Math.random() * cpuTileIndices.length)];
         if (target === undefined) { ctx.finishTurn(ctx.board, CPU_ROLL_FINISH_DELAY_MS); return true; }
+        setCpuClearRowUsed(true);
         const ep1Result = applyRandomGameBoardEffect(ctx.board, target, lastMistakeEp1EffectIdRef.current, 'player1');
         lastMistakeEp1EffectIdRef.current = ep1Result.effectId;
         setBoard(ep1Result.nextBoard);
         setLastMoveIndex(ep1Result.lastMoveIndex ?? target);
-        showEp1Launch(createGameBoardEffectEvent(ep1Result.effectId, ep1Result.effectLabel, ep1Result.affectedIndices, ctx.board));
+        showEp1Launch(
+          createGameBoardEffectEvent(ep1Result.effectId, ep1Result.effectLabel, ep1Result.affectedIndices, ctx.board),
+          true,
+          `Todd used ${ep1Result.effectLabel} emoji power`,
+        );
         ctx.finishTurn(ep1Result.nextBoard, CPU_ROLL_FINISH_DELAY_MS);
         return true;
       }
@@ -203,7 +252,7 @@ export function useToddNervousMistake(cpuId: BattleCpuId) {
       return true;
     }
 
-    if (!cpuTimeWarpUsed && Math.random() < 0.10) {
+    if (!cpuTimeWarpUsed && !timerFrozen && Math.random() < 0.10) {
       setCpuTimeWarpUsed(true);
       fireTimeWarp(addTimerSeconds);
       ctx.finishTurn(ctx.board, CPU_ROLL_FINISH_DELAY_MS);
@@ -215,7 +264,11 @@ export function useToddNervousMistake(cpuId: BattleCpuId) {
         setCpuClearRowUsed(true);
         setBoard(clearResult.nextBoard);
         setLastMoveIndex(clearResult.targetIndex);
-        showEp1Launch(createGameBoardEffectEvent('clearRow', 'Clear Row', clearResult.affectedIndices, ctx.board));
+        showEp1Launch(
+          createGameBoardEffectEvent('clearRow', 'Clear Row', clearResult.affectedIndices, ctx.board),
+          true,
+          'Todd used Clear Row emoji power',
+        );
         ctx.finishTurn(clearResult.nextBoard, CPU_PLACE_FINISH_DELAY_MS);
         return true;
       }
@@ -227,8 +280,10 @@ export function useToddNervousMistake(cpuId: BattleCpuId) {
   return {
     thoughtText,
     isTimerStealing,
+    showThoughtText,
     triggerPlayerPowerResponse,
     resetTodd,
+    resetToddRound,
     executeTurn,
   };
 }

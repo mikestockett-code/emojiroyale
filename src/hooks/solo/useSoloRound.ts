@@ -8,9 +8,9 @@ export function useSoloRound() {
 
   const advanceRound = useCallback(() => {
     setSoloRoundNumber((round) => round + 1);
-    setCurrentPlayer('player1');
+    setCurrentPlayer(soloRoundNumber % 2 === 0 ? 'player1' : 'player2');
     setIsSoloCpuThinking(false);
-  }, []);
+  }, [soloRoundNumber]);
 
   const resetRound = useCallback(() => {
     setSoloRoundNumber(1);

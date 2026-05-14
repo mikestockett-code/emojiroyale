@@ -1,4 +1,4 @@
-import type { SoloModeId, SoloWagerTier, StickerId } from '../../types';
+import type { BattlePowerSlotLoadout, SoloModeId, SoloWagerTier, StickerId } from '../../types';
 
 export type FreshSoloModeAvailability = {
   modeId: SoloModeId;
@@ -16,4 +16,5 @@ export type FreshSoloWager = {
 export type FreshSoloSetup = {
   modeId: SoloModeId;
   wager: FreshSoloWager;
+  powerSlotIds: BattlePowerSlotLoadout;
 };

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, View } from 'react-native';
-import { soloRecapStyles as styles } from './soloRecapStyles';
+import { luxuryResultStyles as styles } from '../shared/luxuryResultStyles';
 
 type Props = {
   roundScore: number;
@@ -22,7 +22,6 @@ export function SoloRecapScore({ roundScore, profileBest }: Props) {
         <Text style={[styles.scoreValue, isBetter && styles.newBest]}>
           {profileBest != null ? profileBest.toLocaleString() : '-'}
         </Text>
-        {isBetter && <Text style={styles.newBestBadge}>NEW BEST!</Text>}
       </View>
     </View>
   );

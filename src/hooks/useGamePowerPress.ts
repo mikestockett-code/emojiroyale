@@ -24,7 +24,7 @@ type UseGamePowerPressOptions = {
   consumePower: (slotId: BattlePowerSlotId) => void;
   setBoard: (board: BoardCell[]) => void;
   setLastMoveIndex: (index: number | null) => void;
-  showEp1Launch: (event: ReturnType<typeof createGameBoardEffectEvent>) => void;
+  showEp1Launch: (event: ReturnType<typeof createGameBoardEffectEvent>, showStatus?: boolean) => void;
   finishTurn: (nextBoard: BoardCell[], meta: TurnEndMeta & Record<string, unknown>) => void;
   getPowerTurnMeta?: (powerId: BattlePowerId) => Record<string, unknown>;
   onEpiPower?: (powerId: BattlePowerId, slotId: BattlePowerSlotId) => boolean;
@@ -115,4 +115,3 @@ function applyBoardPower(powerId: BattlePowerId, board: BoardCell[]): BoardPower
 
   return null;
 }
-

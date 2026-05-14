@@ -15,6 +15,8 @@ export const APP_ROUTES = {
   soloGame: 'soloGame',
   passPlaySubmenu: 'passPlaySubmenu',
   passPlayGame: 'passPlayGame',
+  multiplayerLobby: 'multiplayerLobby',
+  onlineGame: 'onlineGame',
   battleJourney: 'battleJourney',
   battleSubmenu: 'battleSubmenu',
   battleGame: 'battleGame',

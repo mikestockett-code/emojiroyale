@@ -1,10 +1,10 @@
 import React from 'react';
 import { Text } from 'react-native';
-import { soloRecapStyles as styles } from './soloRecapStyles';
+import { luxuryResultStyles as styles } from '../shared/luxuryResultStyles';
 
 export function SoloRecapHeader() {
   return (
-    <Text style={[styles.resultTitle, styles.victoryColor]}>
+    <Text style={styles.resultTitle}>
       SOLO RECAP
     </Text>
   );

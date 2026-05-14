@@ -1,6 +1,13 @@
 import { useState } from 'react';
-import type { BattlePowerSlotLoadout } from '../../types';
+import type { BattlePowerSlotLoadout, StickerId } from '../../types';
 import type { FreshPassPlaySetup } from './passPlaySetup.types';
+import { pickOwnedStickerInTier } from '../shared/wagers/wagerInventory';
+
+function pickOwnedStickerId(wagerId: string, counts: Record<string, number>): StickerId | null {
+  const tier = wagerId === 'legendary' ? 'legendary' : wagerId === 'epic' ? 'epic' : null;
+  if (!tier) return null;
+  return pickOwnedStickerInTier(counts, tier);
+}
 
 export type SetupPhase = 'setup' | 'powerP1' | 'powerP2';
 
@@ -10,6 +17,8 @@ export function usePassPlaySubmenu(
   activeProfileId: string | null,
   secondaryProfileId: string | null,
   initialWagerId = 'none',
+  p1AlbumCounts: Record<string, number> = {},
+  p2AlbumCounts: Record<string, number> = {},
 ) {
   const [selectedWager, setSelectedWager] = useState(initialWagerId);
   const [setupPhase, setSetupPhase] = useState<SetupPhase>('setup');
@@ -18,6 +27,8 @@ export function usePassPlaySubmenu(
 
   const buildSetup = (p1: BattlePowerSlotLoadout, p2: BattlePowerSlotLoadout): FreshPassPlaySetup => ({
     selectedWagerId: selectedWager,
+    p1WagerStickerId: pickOwnedStickerId(selectedWager, p1AlbumCounts),
+    p2WagerStickerId: pickOwnedStickerId(selectedWager, p2AlbumCounts),
     player1ProfileId: activeProfileId,
     player2ProfileId: secondaryProfileId,
     powerSlotIds: { player1: p1, player2: p2 },

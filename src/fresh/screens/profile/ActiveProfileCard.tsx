@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, View } from 'react-native';
-import { FRESH_PROFILE_COLORS } from '../../profile/useFreshProfiles';
+import { FRESH_PROFILE_COLORS } from '../../profile/profileOptions';
 import type { FreshProfile } from '../../profile/types';
 import { profileStyles as styles } from './profileStyles';
 

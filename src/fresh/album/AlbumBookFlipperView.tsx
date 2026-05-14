@@ -1,7 +1,7 @@
 import React from 'react';
 import { Image, ImageBackground, StyleSheet, Text, View } from 'react-native';
 import PageFlipper, { PageFlipperInstance } from '@laffy1309/react-native-page-flipper';
-import { albumBookStyles as styles } from '../shared/albumBookStyles';
+import styles from './albumStyles';
 import { AlbumStickerSlotView } from './AlbumStickerSlotView';
 import { AlbumPuzzlePageView } from './AlbumPuzzlePageView';
 import type { AlbumBookConfig, AlbumPageSpread, AlbumPuzzlePieceCounts, AlbumStickerSlot } from './album.types';
@@ -36,7 +36,7 @@ export function AlbumBookFlipperView({
         data={flipData}
         pageSize={{ width: 283, height: 425 }}
         portrait={false}
-        contentContainerStyle={styles.pageFlipperContent}
+        contentContainerStyle={{ backgroundColor: 'transparent' }}
         renderPage={(raw: string) => renderFlipHalf(raw, spreadsRef, bookRef, albumPuzzlePieces)}
         onFlipStart={onFlipStart}
         onPageDragStart={onPageDragStart}
@@ -66,19 +66,19 @@ function renderFlipHalf(
 
     return (
       <View style={styles.battlePage}>
-        <Image source={customPageSource} style={styles.battlePageImage} resizeMode="cover" />
+        <Image source={customPageSource} style={styles.fullImage} resizeMode="cover" />
         {revealPercent < 1 ? (
           <>
-            <View style={styles.battlePageFog} />
+            <View style={styles.blackOverlay} />
             <View style={[styles.battlePageReveal, { height: `${Math.max(8, revealPercent * 100)}%` }]}>
-              <Image source={customPageSource} style={styles.battlePageImage} resizeMode="cover" />
+              <Image source={customPageSource} style={styles.fullImage} resizeMode="cover" />
             </View>
             <Text style={styles.battlePageLockedText}>{Math.round(revealPercent * 100)}% REVEALED</Text>
           </>
         ) : null}
         {locked ? (
           <>
-            <View style={styles.battlePageLockedOverlay} />
+            <View style={styles.blackOverlay} />
             <Text style={styles.battlePageLockedText}>LOCKED</Text>
           </>
         ) : null}
@@ -97,7 +97,7 @@ function renderFlipHalf(
   );
 
   return (
-    <ImageBackground source={source} style={styles.pageHalfFullImage} resizeMode="stretch">
+    <ImageBackground source={source} style={{ flex: 1 }} resizeMode="stretch">
       <View style={[styles.pageHalfEmojiGrid, { left: isLeft ? 31 : 23, width: isLeft ? 88 : 89 }]}>
         {slots.map((slot, i) =>
           slot ? <AlbumStickerSlotView key={slot.stickerId} slot={slot} /> : <View key={i} style={styles.albumEmojiSlot} />,

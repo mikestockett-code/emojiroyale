@@ -8,6 +8,9 @@ export type PowerSlot = {
   icon: string;
   powerId?: string;
   isSelected: boolean;
+  usesLeft?: number;
+  bonusCount?: number;
+  isDisabled?: boolean;
 };
 
 export type GameAreaProps = {
@@ -18,6 +21,9 @@ export type GameAreaProps = {
   lastMoveIndex?: number | null;
   winningLineIndices?: number[];
   ep1AnimationEvent?: GameBoardEffectEvent | null;
+  ep1StatusVisible?: boolean;
+  ep1StatusLabel?: string;
+  onClearEp1Status?: () => void;
   playerColors?: Record<Player, string>;
   playerTileColors?: Record<Player, string>;
 
@@ -64,7 +70,14 @@ export type GameAreaProps = {
 
   // Top panel
   topLeftImage?: any;
+  topLeftChalkLabel?: string;
+  topLeftWagerEmoji?: string | null;
+  topLeftSubProfile?: { name: string; avatar: string; colorHex: string } | null;
   topRightImage?: any;
+  topRightChalkLabel?: string;
+  topRightWagerEmoji?: string | null;
+  topRightWagerEmojiName?: string | null;
+  topRightSubProfile?: { name: string; avatar: string; colorHex: string } | null;
   centerImage?: any;
   namePlateText?: string;
   timerText?: string;

@@ -4,7 +4,7 @@ import { EPI_CARD_SIZE } from './powerCardStyles';
 import { PowerSection } from './PowerSection';
 import type { PowerSelectionSectionProps } from './types';
 
-export function EPISection({ slot1, slot2, albumCounts, onSelect, onRemove }: PowerSelectionSectionProps) {
+export function EPISection({ slot1, slot2, albumCounts, onAssignSlot }: PowerSelectionSectionProps) {
   return (
     <PowerSection
       title="EMOJI POWER"
@@ -13,8 +13,7 @@ export function EPISection({ slot1, slot2, albumCounts, onSelect, onRemove }: Po
       slot1={slot1}
       slot2={slot2}
       albumCounts={albumCounts}
-      onSelect={onSelect}
-      onRemove={onRemove}
+      onAssignSlot={onAssignSlot}
       headerMarginTop={16}
       cardSize={EPI_CARD_SIZE}
     />

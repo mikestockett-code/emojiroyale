@@ -2,7 +2,7 @@ import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import type { FreshProfile } from '../profile/types';
 import type { AlbumStickerDefinition } from '../album/album.types';
-import { soloRecapStyles as styles } from './soloRecapStyles';
+import { luxuryResultStyles as styles } from '../shared/luxuryResultStyles';
 import { EmojiStickerPicker } from '../shared/EmojiStickerPicker';
 
 type Props = {
