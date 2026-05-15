@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { FRESH_PROFILE_COLORS } from '../../profile/profileOptions';
 import type { FreshProfile } from '../../profile/types';
+import { useAudioContext } from '../../audio/AudioContext';
 import { profileStyles as styles } from './profileStyles';
 
 type Props = {
@@ -21,6 +22,8 @@ export function ProfileListCard({
   onSetSecondaryProfile,
   onDeleteProfile,
 }: Props) {
+  const { playSound } = useAudioContext();
+
   if (profiles.length === 0) {
     return (
       <View style={styles.card}>
@@ -58,7 +61,10 @@ export function ProfileListCard({
               {/* Actions */}
               <View style={styles.actionRow}>
                 <Pressable
-                  onPress={() => onSetActiveProfile(profile.id)}
+                  onPress={() => {
+                    playSound('button');
+                    onSetActiveProfile(profile.id);
+                  }}
                   style={({ pressed }) => [styles.smallButton, isActive && styles.smallButtonActive, pressed && styles.pressed]}
                 >
                   <Text style={[styles.smallButtonText, isActive && styles.smallButtonTextActive]}>
@@ -67,14 +73,20 @@ export function ProfileListCard({
                 </Pressable>
 
                 <Pressable
-                  onPress={() => onSetSecondaryProfile(isSecondary ? null : profile.id)}
+                  onPress={() => {
+                    playSound('button');
+                    onSetSecondaryProfile(isSecondary ? null : profile.id);
+                  }}
                   style={({ pressed }) => [styles.smallButton, isSecondary && styles.smallButtonSecondary, pressed && styles.pressed]}
                 >
                   <Text style={[styles.smallButtonText, isSecondary && styles.whiteText]}>P2</Text>
                 </Pressable>
 
                 <Pressable
-                  onPress={() => onDeleteProfile(profile.id)}
+                  onPress={() => {
+                    playSound('button');
+                    onDeleteProfile(profile.id);
+                  }}
                   style={({ pressed }) => [styles.deleteButton, pressed && styles.pressed]}
                 >
                   <Text style={styles.deleteButtonText}>x</Text>

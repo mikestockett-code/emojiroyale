@@ -4,7 +4,7 @@ import type { AudioSourceKey } from '../../lib/audio';
 import { getWinSound } from '../../lib/audio';
 import { getWinner } from '../../lib/winDetection';
 import { isEpicOrLegendaryWinner } from '../../lib/roundResult';
-import type { TurnEndMeta } from '../useGameBoard';
+import type { TurnEndMeta } from '../useModeBoardController';
 
 type SoloTurnMeta = TurnEndMeta;
 

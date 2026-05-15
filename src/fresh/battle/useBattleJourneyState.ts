@@ -7,6 +7,7 @@ import type { FreshSoloRewardPreview } from '../../lib/soloRewardRules';
 const BATTLE_INTRO_SEEN_KEY = '@battle_journey_intro_seen_v1';
 const BATTLE_JOURNEY_SAVE_KEY = '@battle_journey_save_v1';
 const BATTLE_PENDING_STICKERS_KEY = '@battle_journey_pending_stickers_v1';
+const NO_PROFILE_BATTLE_KEY = 'no-profile';
 
 export type BattleJourneyCpuId = 'todd' | 'nico';
 
@@ -39,18 +40,31 @@ const NICO_STAGE_PIECES: Record<1 | 2 | 3, string[]> = {
   3: ['battleNico-7', 'battleNico-8', 'battleNico-9', 'battleNico-10'],
 };
 
+function getProfileBattleKey(profileId: string | null | undefined) {
+  return profileId?.trim() || NO_PROFILE_BATTLE_KEY;
+}
 
-export function useBattleJourneyState() {
+function getBattleJourneySaveKey(profileId: string | null | undefined) {
+  return `${BATTLE_JOURNEY_SAVE_KEY}:${getProfileBattleKey(profileId)}`;
+}
+
+function getBattlePendingStickersKey(profileId: string | null | undefined) {
+  return `${BATTLE_PENDING_STICKERS_KEY}:${getProfileBattleKey(profileId)}`;
+}
+
+export function useBattleJourneyState(profileId?: string | null) {
   const [isReady, setIsReady] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
   const [save, setSave] = useState<BattleJourneySave | null>(null);
 
   useEffect(() => {
     let mounted = true;
+    const saveKey = getBattleJourneySaveKey(profileId);
+    setIsReady(false);
 
     Promise.all([
       AsyncStorage.getItem(BATTLE_INTRO_SEEN_KEY),
-      AsyncStorage.getItem(BATTLE_JOURNEY_SAVE_KEY),
+      AsyncStorage.getItem(saveKey),
     ]).then(([introSeen, savedJourney]) => {
       if (!mounted) return;
 
@@ -61,6 +75,8 @@ export function useBattleJourneyState() {
         } catch {
           setSave(null);
         }
+      } else {
+        setSave(null);
       }
       setIsReady(true);
     });
@@ -68,7 +84,7 @@ export function useBattleJourneyState() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [profileId]);
 
   const dismissIntro = useCallback(async () => {
     setShowIntro(false);
@@ -81,9 +97,9 @@ export function useBattleJourneyState() {
       updatedAt: Date.now(),
     };
     setSave(nextSave);
-    await AsyncStorage.setItem(BATTLE_JOURNEY_SAVE_KEY, JSON.stringify(nextSave));
+    await AsyncStorage.setItem(getBattleJourneySaveKey(profileId), JSON.stringify(nextSave));
     return nextSave;
-  }, []);
+  }, [profileId]);
 
   const restartStageOne = useCallback(async () => {
     return startStageOne();
@@ -123,7 +139,7 @@ export async function completeBattleJourneyStage(
     }
   }
 
-  const storedPendingRewards = await readPendingStickerRewards();
+  const storedPendingRewards = await readPendingStickerRewards(profileId);
   const nextPendingRewards = [...storedPendingRewards, ...pendingStickerRewards];
 
   if (stageNumber === 3) {
@@ -133,25 +149,25 @@ export async function completeBattleJourneyStage(
         grantAlbumSticker?.(profileId, reward.stickerId, reward.count);
       }
     }
-    await AsyncStorage.removeItem(BATTLE_PENDING_STICKERS_KEY);
+    await AsyncStorage.removeItem(getBattlePendingStickersKey(profileId));
     // Todd arc done → advance to Nico; Nico arc done → loop back to Todd
     const nextCpuId: BattleJourneyCpuId = cpuId === 'todd' ? 'nico' : 'todd';
-    await writeJourneySave({ cpuId: nextCpuId, stageNumber: 1, updatedAt: Date.now() });
+    await writeJourneySave(profileId, { cpuId: nextCpuId, stageNumber: 1, updatedAt: Date.now() });
     return { nextStageNumber: 1, nextCpuId, didCompleteCpuArc: true };
   }
 
-  await AsyncStorage.setItem(BATTLE_PENDING_STICKERS_KEY, JSON.stringify(nextPendingRewards));
+  await AsyncStorage.setItem(getBattlePendingStickersKey(profileId), JSON.stringify(nextPendingRewards));
   const nextStageNumber = (stageNumber + 1) as 2 | 3;
-  await writeJourneySave({ cpuId, stageNumber: nextStageNumber, updatedAt: Date.now() });
+  await writeJourneySave(profileId, { cpuId, stageNumber: nextStageNumber, updatedAt: Date.now() });
   return { nextStageNumber, nextCpuId: cpuId, didCompleteCpuArc: false };
 }
 
-export async function clearBattleJourneyPendingStickerRewards() {
-  await AsyncStorage.removeItem(BATTLE_PENDING_STICKERS_KEY);
+export async function clearBattleJourneyPendingStickerRewards(profileId?: string | null) {
+  await AsyncStorage.removeItem(getBattlePendingStickersKey(profileId));
 }
 
-async function readPendingStickerRewards(): Promise<FreshSoloRewardPreview[]> {
-  const raw = await AsyncStorage.getItem(BATTLE_PENDING_STICKERS_KEY);
+async function readPendingStickerRewards(profileId?: string | null): Promise<FreshSoloRewardPreview[]> {
+  const raw = await AsyncStorage.getItem(getBattlePendingStickersKey(profileId));
   if (!raw) return [];
   try {
     return JSON.parse(raw) as FreshSoloRewardPreview[];
@@ -160,6 +176,6 @@ async function readPendingStickerRewards(): Promise<FreshSoloRewardPreview[]> {
   }
 }
 
-async function writeJourneySave(save: BattleJourneySave) {
-  await AsyncStorage.setItem(BATTLE_JOURNEY_SAVE_KEY, JSON.stringify(save));
+async function writeJourneySave(profileId: string | null | undefined, save: BattleJourneySave) {
+  await AsyncStorage.setItem(getBattleJourneySaveKey(profileId), JSON.stringify(save));
 }

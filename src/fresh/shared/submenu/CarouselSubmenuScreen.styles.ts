@@ -20,6 +20,63 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  cardDeckContainer: {
+    width: 324,
+    height: 505,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardDeckCard: {
+    position: 'absolute',
+    top: 30,
+    width: 324,
+    height: 445,
+  },
+  cardTouchableFixed: {
+    width: 324,
+    height: 445,
+  },
+  cardWrap: {
+    width: '100%',
+    height: '100%',
+    overflow: 'hidden',
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
+  },
+  cardImage: {
+    width: '100%',
+    height: '100%',
+  },
+  cardCheckBadge: {
+    position: 'absolute',
+    bottom: 10,
+    right: 10,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardWrapUnselected: {
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.1)',
+    shadowColor: '#000',
+    shadowOpacity: 0.65,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 10,
+  },
+  cardWrapSelected: {
+    borderWidth: 2.5,
+    shadowOpacity: 1,
+    shadowRadius: 26,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 10,
+  },
   dotRow: {
     flexDirection: 'row',
     gap: 8,
@@ -53,10 +110,6 @@ export const styles = StyleSheet.create({
     right: 0,
     alignItems: 'center',
   },
-  startBtnFlow: {
-    alignItems: 'center',
-    paddingBottom: 24,
-  },
   startImg: {
     width: 210,
     height: 210 * (437 / 1306),
@@ -65,9 +118,8 @@ export const styles = StyleSheet.create({
   startDisabled: {
     opacity: 0.48,
   },
-  messageWrap: {
-    alignItems: 'center',
-    paddingBottom: 80,
+  startPressed: {
+    opacity: 0.75,
   },
   messageWrapAbsolute: {
     position: 'absolute',

@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import type { BattlePowerId, BattlePowerSlotId, BoardCell } from '../types';
-import type { TurnEndMeta } from './useGameBoard';
+import type { TurnEndMeta } from './useModeBoardController';
 import type { GamePowerSlotData } from './useGamePowerSlots';
 import { applyFourSquarePower, applyTornadoPower } from '../lib/battlePowerEffects';
 import { createGameBoardEffectEvent } from '../lib/gameBoardEffects';

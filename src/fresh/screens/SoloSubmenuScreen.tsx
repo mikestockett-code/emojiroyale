@@ -1,16 +1,15 @@
-// SoloSubmenuScreen.tsx
-// New Solo submenu screen.
-//
-// This screen intentionally reuses the existing Solo submenu UI,
-// because that UI already matches the desired design.
-
 import React, { useState } from 'react';
 import { Alert } from 'react-native';
 import type { SoloSubmenuNavigation } from '../types/navigation';
-import SoloSubMenu from '../../screens/SoloSubMenu';
 import { useSoloSubmenuState } from '../solo/useSoloSubmenuState';
 import { ModePowerSetupScreen } from '../shared/setup/ModePowerSetupScreen';
 import type { FreshSoloSetup } from '../solo/soloSetup.types';
+import { SharedBottomNav } from '../shared/SharedBottomNav';
+import { SOLO_MODE_CARDS } from '../shared/submenu/CarouselCardDeck';
+import { CarouselSubmenuScreen } from '../shared/submenu/CarouselSubmenuScreen';
+import type { SoloModeId } from '../../types';
+
+const BG = require('../../../assets/backgrounds/backgroundgamearea.png');
 
 export default function SoloSubmenuScreen({
   onBackToMenu,
@@ -46,8 +45,15 @@ export default function SoloSubmenuScreen({
   }
 
   return (
-    <SoloSubMenu
-      onBack={onBackToMenu}
+    <CarouselSubmenuScreen
+      backgroundSource={BG}
+      cards={SOLO_MODE_CARDS}
+      selectedCardId={selectedMode}
+      onSelectCard={(mode) => handleSelectMode(mode as SoloModeId)}
+      selectableCardIds={selectableModeIds}
+      getCardOpacity={(cardId) => (selectableModeIds.includes(cardId as SoloModeId) ? 1 : 0.48)}
+      dots={SOLO_MODE_CARDS}
+      selectedDotId={selectedMode}
       onStart={() => {
         const setup = buildSoloSetup();
         if (!setup) {
@@ -57,15 +63,20 @@ export default function SoloSubmenuScreen({
         setPendingSetup(setup);
         setPhase('power');
       }}
-      onOpenProfiles={onOpenProfiles}
-      profileAvatar={activeProfileAvatar}
-      profileName={activeProfile?.name ?? 'Profile'}
-      profileColor={activeProfile?.color ?? 'sunset'}
-      soloMode={selectedMode}
-      onChangeSoloMode={handleSelectMode}
-      selectableModeIds={selectableModeIds}
       startDisabled={!canStart}
       startMessage={startMessage}
+      bottomNav={(
+        <SharedBottomNav
+          profileName={activeProfile?.name ?? 'Profile'}
+          profileAvatar={activeProfileAvatar}
+          profileColor={activeProfile?.color ?? 'sunset'}
+          scoreLabel="Score"
+          scoreValue={0}
+          onProfilePress={onOpenProfiles}
+          onBackPress={onBackToMenu}
+          onHowToPress={() => {}}
+        />
+      )}
     />
   );
 }

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "MasterEmojiProjectRebuild",
+    "name": "Emoji Royale",
     "slug": "MasterEmojiProjectRebuild",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -9,11 +9,11 @@
       "android",
       "web"
     ],
-    "icon": "./assets/icon.png",
+    "icon": "./assets/images/appicon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -27,14 +27,14 @@
     "android": {
       "package": "com.stockett119.emojiroyale",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "permissions": [
-        "android.permission.RECORD_AUDIO",
-        "android.permission.MODIFY_AUDIO_SETTINGS"
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "updates": {
@@ -44,7 +44,13 @@
       "policy": "sdkVersion"
     },
     "plugins": [
-      "expo-audio",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
+      ],
       "expo-font",
       "expo-asset"
     ],

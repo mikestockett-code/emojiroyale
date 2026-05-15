@@ -1,5 +1,5 @@
 # Multiplayer Mode Plan
-
+glithches players can go not on there turn, and they can see and play from any rack. 
 ## Goal
 
 Build online multiplayer cleanly from scratch.
@@ -123,7 +123,6 @@ Done:
 - Main menu has visible `mp.png` button.
 - Multiplayer lobby exists.
 - Lobby flow is now correct: create room, show code, then pick powers; guest joins, then picks powers.
-- Host can share the room code through the native share sheet to reduce typo risk.
 - Host can start only after Guest joined and both players picked powers.
 - Lobby uses `luxuryTheme` styles and scroll-safe layout.
 - `src/multiplayer/useOnlineGame.ts` exists.
@@ -138,10 +137,6 @@ Current first-playable behavior:
 - Guest sends `selectRackIndex`, `pressSquare`, and `pressPowerSlot` requests.
 - Host checks the Guest UID, turn, duplicate move id, and current board before applying a move.
 - Each phone shows its own rack, not the current turn player's rack.
-- Each phone builds power buttons for its own player, not the host/current local hook player.
-- Each phone's rack color/highlight stays tied to its own side.
-- Used powers grey out through the shared `PowerSlots` renderer, so this behavior is shared with Solo, Battle, and Pass & Play.
-- Power picker album locks are temporarily bypassed with `UNLOCK_ALL_POWERS_FOR_TESTING` in `src/components/power-selection/PowerSection.tsx`.
 - Online HUD is local-first: `YOU` and `OPP`.
 - Top-right game badge says `BATTLE`, not the room code.
 - Rolls are disabled for online mode for now.
@@ -173,20 +168,18 @@ Do not switch to stricter field-level rules until the two-device flow is proven.
 
 1. Test create room on device A and join room on device B.
 2. Confirm Host sees the room code before power selection.
-3. Confirm Host can share the room code by text/share sheet.
-4. Confirm Guest can join with exactly the shown/shared code.
-5. Confirm both devices reach power selection after room connection.
-6. Confirm Host waiting room sees Guest joined and Guest powers ready.
-7. Confirm Host start moves both devices into online game.
-8. Test each phone has a different visible rack and gets a fresh rack after its own placement.
-9. Test Host placement and Guest board mirroring.
-10. Test Guest placement request and Host-applied board update.
-11. Test each phone sees only its own selected powers.
-12. Test basic EP1 power requests.
-13. Fix any real-device RTDB/auth timing bugs.
-14. Add disconnection overlay using existing presence data.
-15. Add proper online rematch state reset for both devices.
-16. Re-enable or design online rolls after placement/power sync is stable.
+3. Confirm Guest can join with exactly the shown code.
+4. Confirm both devices reach power selection after room connection.
+5. Confirm Host waiting room sees Guest joined and Guest powers ready.
+6. Confirm Host start moves both devices into online game.
+7. Test each phone has a different visible rack and gets a fresh rack after its own placement.
+8. Test Host placement and Guest board mirroring.
+9. Test Guest placement request and Host-applied board update.
+10. Test basic EP1 power requests.
+11. Fix any real-device RTDB/auth timing bugs.
+12. Add disconnection overlay using existing presence data.
+13. Add proper online rematch state reset for both devices.
+14. Re-enable or design online rolls after placement/power sync is stable.
 
 ---
 
@@ -263,7 +256,6 @@ Works the same as Pass & Play:
 - Start by reading real-device behavior from the user, then fix the smallest failing multiplayer slice.
 - Keep Firebase rules simple during testing: authenticated read/write under `rooms`.
 - Do not rework the lobby flow back to power-first. Correct flow is Host create room → show code → powers.
-- Power cards are intentionally all unlocked during testing. Restore album-based locks after gameplay testing.
 - Old test rooms can be manually deleted from Firebase console.
 
 ## Shared Menu Refactor Notes

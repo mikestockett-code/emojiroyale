@@ -79,8 +79,8 @@ export function useBattleRewards({ cpuId, stageNumber, rewardOptions }: BattleRe
 
   const clearCpuBattleCompleteRewards = useCallback(() => {
     setPendingStickerRewards([]);
-    void clearBattleJourneyPendingStickerRewards();
-  }, []);
+    void clearBattleJourneyPendingStickerRewards(rewardOptions.activeProfileId);
+  }, [rewardOptions.activeProfileId]);
 
   const clearRewardPreview = useCallback(() => {
     setRewardPreview(null);

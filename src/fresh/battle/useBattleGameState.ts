@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTieDetection } from '../../hooks/useTieDetection';
 import type { BattlePowerId, BoardCell, Player } from '../../types';
-import type { TurnEndMeta } from '../../hooks/useGameBoard';
+import type { TurnEndMeta } from '../../hooks/useModeBoardController';
 import { useRoundTimer } from '../../hooks/useRoundTimer';
 import { useSoloCpu, type CpuTurnContext } from '../../hooks/useSoloCpu';
 import { useModeBoardController } from '../../hooks/useModeBoardController';
@@ -65,20 +65,11 @@ export function useBattleGameState(setup: FreshBattleSetup, rewardOptions: Battl
   const lastMoveIndexRef = useRef<number | null>(null);
   const playerMoveCountRef = useRef(0);
   const playerPowerUseCountRef = useRef(0);
-  const nicoIntroShownRef = useRef(false);
 
   useEffect(() => () => {
     if (roundTauntTimerRef.current) clearTimeout(roundTauntTimerRef.current);
   }, []);
 
-  useEffect(() => {
-    if (cpuId !== 'nico') return;
-    if (stageNumber !== 1) return;
-    if (nicoIntroShownRef.current) return;
-    nicoIntroShownRef.current = true;
-    const timer = setTimeout(() => nico.triggerStageIntro(stageNumber), 650);
-    return () => clearTimeout(timer);
-  }, [cpuId, nico, stageNumber]);
 
   const showRoundTaunt = useCallback(() => {
     const lines = personality.lines.roundTaunt ?? personality.lines.nervous;

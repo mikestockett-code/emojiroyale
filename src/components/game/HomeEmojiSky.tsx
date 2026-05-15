@@ -78,55 +78,36 @@ export function HomeEmojiSky({ width, height }: Props) {
 }
 
 function FloatingEmoji({ particle }: { particle: EmojiParticle }) {
-  const progress = useSharedValue(0);
-
-  useEffect(() => {
-    progress.value = withDelay(
-      particle.delay,
-      withRepeat(
-        withTiming(1, {
-          duration: particle.duration,
-          easing: Easing.inOut(Easing.sin),
-        }),
-        -1,
-        true,
-      ),
-    );
-  }, [particle.delay, particle.duration, progress]);
-
-  const animatedStyle = useAnimatedStyle(() => {
-    const sway = Math.sin(progress.value * Math.PI * 2);
-    const bob = Math.cos(progress.value * Math.PI * 2);
-    return {
-      opacity: particle.opacity,
-      transform: [
-        { translateX: sway * particle.driftX },
-        { translateY: bob * particle.driftY },
-        { rotate: `${sway * particle.rotate}deg` },
-        { scale: 0.92 + progress.value * 0.16 },
-      ],
-    };
-  });
-
   return (
-    <Reanimated.View
-      style={[
-        styles.emojiWrap,
-        {
-          left: particle.left,
-          top: particle.top,
-          width: particle.size * 1.8,
-          height: particle.size * 1.8,
-        },
-        animatedStyle,
-      ]}
-    >
+    <FloatingParticle particle={particle} wrapStyle={styles.emojiWrap} size={particle.size * 1.8} scaleStart={0.92} scaleRange={0.16}>
       <Text style={[styles.emoji, { fontSize: particle.size }]}>{particle.emoji}</Text>
-    </Reanimated.View>
+    </FloatingParticle>
   );
 }
 
 function FloatingLegendaryImage({ particle }: { particle: ImageParticle }) {
+  return (
+    <FloatingParticle particle={particle} wrapStyle={styles.legendaryWrap} size={particle.size} scaleStart={0.9} scaleRange={0.13}>
+      <Image source={particle.source} style={styles.legendaryImage} resizeMode="contain" />
+    </FloatingParticle>
+  );
+}
+
+function FloatingParticle({
+  particle,
+  wrapStyle,
+  size,
+  scaleStart,
+  scaleRange,
+  children,
+}: {
+  particle: Omit<EmojiParticle, 'emoji'>;
+  wrapStyle: object;
+  size: number;
+  scaleStart: number;
+  scaleRange: number;
+  children: React.ReactNode;
+}) {
   const progress = useSharedValue(0);
 
   useEffect(() => {
@@ -152,25 +133,25 @@ function FloatingLegendaryImage({ particle }: { particle: ImageParticle }) {
         { translateX: sway * particle.driftX },
         { translateY: bob * particle.driftY },
         { rotate: `${sway * particle.rotate}deg` },
-        { scale: 0.9 + progress.value * 0.13 },
+        { scale: scaleStart + progress.value * scaleRange },
       ],
     };
-  });
+  }, [particle.driftX, particle.driftY, particle.opacity, particle.rotate, scaleRange, scaleStart]);
 
   return (
     <Reanimated.View
       style={[
-        styles.legendaryWrap,
+        wrapStyle,
         {
           left: particle.left,
           top: particle.top,
-          width: particle.size,
-          height: particle.size,
+          width: size,
+          height: size,
         },
         animatedStyle,
       ]}
     >
-      <Image source={particle.source} style={styles.legendaryImage} resizeMode="contain" />
+      {children}
     </Reanimated.View>
   );
 }

@@ -9,9 +9,11 @@ import type {
   StickerId,
 } from '../types';
 import type { AudioSourceKey } from '../lib/audio';
-import { useGameBoard, type TurnEndMeta } from './useGameBoard';
+import { useBoardStateController, type TurnEndMeta } from './useBoardStateController';
 import { useGamePowerPress } from './useGamePowerPress';
 import { useGamePowerSlots, toGameBoardPowerSlot } from './useGamePowerSlots';
+
+export type { TurnEndMeta } from './useBoardStateController';
 
 type PowerLoadoutsByPlayer = Record<Player, BattlePowerSlotLoadout>;
 
@@ -24,6 +26,7 @@ type UseModeBoardControllerOptions = {
   interactionDisabled?: boolean;
   soloMode?: SoloModeId;
   roundNumber?: number;
+  initialBoard?: BoardCell[];
   initialPlayerRacks?: Record<Player, StickerId[]>;
   onRollConsumed?: () => void;
   onRackLocked?: () => void;
@@ -44,6 +47,7 @@ export function useModeBoardController({
   interactionDisabled = false,
   soloMode = 'battle',
   roundNumber = 1,
+  initialBoard,
   initialPlayerRacks,
   onRollConsumed,
   onRackLocked,
@@ -77,13 +81,14 @@ export function useModeBoardController({
     };
   }, [currentPlayer, player1Powers, player2Powers]);
 
-  const boardController = useGameBoard({
+  const boardController = useBoardStateController({
     currentPlayer,
     onTurnEnd,
     rollsDisabled,
     interactionDisabled,
     soloMode,
     roundNumber,
+    initialBoard,
     initialPlayerRacks,
     powerSlots: {
       slot1: toGameBoardPowerSlot(currentPowerSlots.slot1),

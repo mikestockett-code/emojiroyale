@@ -3,8 +3,8 @@ import { Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { PassPlaySubmenuNavigation } from '../types/navigation';
 import { SharedBottomNav } from '../shared/SharedBottomNav';
+import { GOLDEN_PHOENIX_WAGER_CARDS, PASS_PLAY_WAGER_CARDS } from '../shared/submenu/CarouselCardDeck';
 import { CarouselSubmenuScreen } from '../shared/submenu/CarouselSubmenuScreen';
-import WagerCardDeck from '../../components/game/WagerCardDeck';
 import { ModePowerSetupScreen } from '../shared/setup/ModePowerSetupScreen';
 import { useGoldenPhoenixHolder } from '../../hooks/useGoldenPhoenixHolder';
 import { usePassPlaySubmenu } from '../passplay/usePassPlaySubmenu';
@@ -40,6 +40,7 @@ export default function PassPlaySubmenuScreen({
     goldenPhoenixHolderName,
   });
   const canStart = startBlockReason === null;
+  const cards = isGoldenPhoenixEntry ? GOLDEN_PHOENIX_WAGER_CARDS : PASS_PLAY_WAGER_CARDS;
 
   if (setupPhase === 'powerP1') {
     return (
@@ -77,15 +78,10 @@ export default function PassPlaySubmenuScreen({
   return (
     <CarouselSubmenuScreen
       backgroundSource={BG}
-      deckWrapStyle={{ marginTop: '33%' }}
-      deck={(
-        <WagerCardDeck
-          selectedId={isGoldenPhoenixEntry ? 'legendary' : selectedWager}
-          onSelect={isGoldenPhoenixEntry ? () => setSelectedWager('legendary') : setSelectedWager}
-          variant={isGoldenPhoenixEntry ? 'goldenPhoenix' : 'default'}
-        />
-      )}
-      dots={(isGoldenPhoenixEntry ? ['legendary'] : ['none', 'epic', 'legendary'])}
+      cards={cards}
+      selectedCardId={isGoldenPhoenixEntry ? 'legendary' : selectedWager}
+      onSelectCard={isGoldenPhoenixEntry ? () => setSelectedWager('legendary') : setSelectedWager}
+      dots={cards}
       selectedDotId={selectedWager}
       statusText={isGoldenPhoenixEntry ? 'Golden Phoenix Trophy Challenge' : null}
       startDisabled={!canStart}

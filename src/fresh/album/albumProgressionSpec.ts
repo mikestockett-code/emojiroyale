@@ -1,5 +1,6 @@
 import type {
   AlbumChapterCollectedCounts,
+  AlbumChapterRequirement,
   AlbumChapterId,
   AlbumChapterProgressSummary,
   AlbumEraId,
@@ -17,142 +18,48 @@ const CHAPTER_ORDER: AlbumChapterId[] = ['common', 'epic', 'legendary'];
 // These are planned unique sticker totals, not generic fill slots.
 // Duplicates can exist in inventory, but album completion is unique collected / total unique.
 // Bronze custom art is tracked through puzzle pieces, not chapter extremelyRare slots.
+type ChapterStickerTotals = Partial<Record<AlbumChapterId, Partial<Record<'common' | 'rare' | 'extremelyRare', number>>>>;
+
+function createChapterRequirement(
+  common = 0,
+  rare = 0,
+  extremelyRare = 0,
+): AlbumChapterRequirement {
+  return {
+    scarcity: {
+      common: { totalUniqueStickers: common, pageKind: 'standardSlot' },
+      rare: { totalUniqueStickers: rare, pageKind: 'standardSlot' },
+      extremelyRare: { totalUniqueStickers: extremelyRare, pageKind: 'specialPage' },
+    },
+  };
+}
+
+function createEraSpec(id: AlbumEraId, title: string, totals: ChapterStickerTotals = {}): AlbumEraSpec {
+  return {
+    id,
+    title,
+    chapters: {
+      common: createChapterRequirement(totals.common?.common, totals.common?.rare, totals.common?.extremelyRare),
+      epic: createChapterRequirement(totals.epic?.common, totals.epic?.rare, totals.epic?.extremelyRare),
+      legendary: createChapterRequirement(
+        totals.legendary?.common,
+        totals.legendary?.rare,
+        totals.legendary?.extremelyRare,
+      ),
+    },
+  };
+}
+
 export const ALBUM_ERA_SPECS: Record<AlbumEraId, AlbumEraSpec> = {
-  bronze: {
-    id: 'bronze',
-    title: 'Bronze',
-    chapters: {
-      common: {
-        scarcity: {
-          common: { totalUniqueStickers: 80, pageKind: 'standardSlot' },
-          rare: { totalUniqueStickers: 20, pageKind: 'standardSlot' },
-          extremelyRare: { totalUniqueStickers: 0, pageKind: 'specialPage' },
-        },
-      },
-      epic: {
-        scarcity: {
-          common: { totalUniqueStickers: 72, pageKind: 'standardSlot' },
-          rare: { totalUniqueStickers: 18, pageKind: 'standardSlot' },
-          extremelyRare: { totalUniqueStickers: 0, pageKind: 'specialPage' },
-        },
-      },
-      legendary: {
-        scarcity: {
-          common: { totalUniqueStickers: 64, pageKind: 'standardSlot' },
-          rare: { totalUniqueStickers: 16, pageKind: 'standardSlot' },
-          extremelyRare: { totalUniqueStickers: 0, pageKind: 'specialPage' },
-        },
-      },
-    },
-  },
-  silver: {
-    id: 'silver',
-    title: 'Silver',
-    chapters: {
-      common: {
-        scarcity: {
-          common: { totalUniqueStickers: 0, pageKind: 'standardSlot' },
-          rare: { totalUniqueStickers: 0, pageKind: 'standardSlot' },
-          extremelyRare: { totalUniqueStickers: 0, pageKind: 'specialPage' },
-        },
-      },
-      epic: {
-        scarcity: {
-          common: { totalUniqueStickers: 0, pageKind: 'standardSlot' },
-          rare: { totalUniqueStickers: 0, pageKind: 'standardSlot' },
-          extremelyRare: { totalUniqueStickers: 0, pageKind: 'specialPage' },
-        },
-      },
-      legendary: {
-        scarcity: {
-          common: { totalUniqueStickers: 0, pageKind: 'standardSlot' },
-          rare: { totalUniqueStickers: 0, pageKind: 'standardSlot' },
-          extremelyRare: { totalUniqueStickers: 0, pageKind: 'specialPage' },
-        },
-      },
-    },
-  },
-  gold: {
-    id: 'gold',
-    title: 'Gold',
-    chapters: {
-      common: {
-        scarcity: {
-          common: { totalUniqueStickers: 0, pageKind: 'standardSlot' },
-          rare: { totalUniqueStickers: 0, pageKind: 'standardSlot' },
-          extremelyRare: { totalUniqueStickers: 0, pageKind: 'specialPage' },
-        },
-      },
-      epic: {
-        scarcity: {
-          common: { totalUniqueStickers: 0, pageKind: 'standardSlot' },
-          rare: { totalUniqueStickers: 0, pageKind: 'standardSlot' },
-          extremelyRare: { totalUniqueStickers: 0, pageKind: 'specialPage' },
-        },
-      },
-      legendary: {
-        scarcity: {
-          common: { totalUniqueStickers: 0, pageKind: 'standardSlot' },
-          rare: { totalUniqueStickers: 0, pageKind: 'standardSlot' },
-          extremelyRare: { totalUniqueStickers: 0, pageKind: 'specialPage' },
-        },
-      },
-    },
-  },
-  platinum: {
-    id: 'platinum',
-    title: 'Platinum',
-    chapters: {
-      common: {
-        scarcity: {
-          common: { totalUniqueStickers: 0, pageKind: 'standardSlot' },
-          rare: { totalUniqueStickers: 0, pageKind: 'standardSlot' },
-          extremelyRare: { totalUniqueStickers: 0, pageKind: 'specialPage' },
-        },
-      },
-      epic: {
-        scarcity: {
-          common: { totalUniqueStickers: 0, pageKind: 'standardSlot' },
-          rare: { totalUniqueStickers: 0, pageKind: 'standardSlot' },
-          extremelyRare: { totalUniqueStickers: 0, pageKind: 'specialPage' },
-        },
-      },
-      legendary: {
-        scarcity: {
-          common: { totalUniqueStickers: 0, pageKind: 'standardSlot' },
-          rare: { totalUniqueStickers: 0, pageKind: 'standardSlot' },
-          extremelyRare: { totalUniqueStickers: 0, pageKind: 'specialPage' },
-        },
-      },
-    },
-  },
-  diamond: {
-    id: 'diamond',
-    title: 'Diamond',
-    chapters: {
-      common: {
-        scarcity: {
-          common: { totalUniqueStickers: 0, pageKind: 'standardSlot' },
-          rare: { totalUniqueStickers: 0, pageKind: 'standardSlot' },
-          extremelyRare: { totalUniqueStickers: 0, pageKind: 'specialPage' },
-        },
-      },
-      epic: {
-        scarcity: {
-          common: { totalUniqueStickers: 0, pageKind: 'standardSlot' },
-          rare: { totalUniqueStickers: 0, pageKind: 'standardSlot' },
-          extremelyRare: { totalUniqueStickers: 0, pageKind: 'specialPage' },
-        },
-      },
-      legendary: {
-        scarcity: {
-          common: { totalUniqueStickers: 0, pageKind: 'standardSlot' },
-          rare: { totalUniqueStickers: 0, pageKind: 'standardSlot' },
-          extremelyRare: { totalUniqueStickers: 0, pageKind: 'specialPage' },
-        },
-      },
-    },
-  },
+  bronze: createEraSpec('bronze', 'Bronze', {
+    common: { common: 80, rare: 20 },
+    epic: { common: 72, rare: 18 },
+    legendary: { common: 64, rare: 16 },
+  }),
+  silver: createEraSpec('silver', 'Silver'),
+  gold: createEraSpec('gold', 'Gold'),
+  platinum: createEraSpec('platinum', 'Platinum'),
+  diamond: createEraSpec('diamond', 'Diamond'),
 };
 
 function getPercentComplete(uniqueCollected: number, totalUniqueStickers: number) {

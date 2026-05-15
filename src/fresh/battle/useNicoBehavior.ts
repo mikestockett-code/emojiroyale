@@ -19,7 +19,6 @@ const FOUR_SQUARE_CORNERS = [
 ] as const;
 const FOUR_SQUARE_INDICES: Set<number> = new Set(FOUR_SQUARE_CORNERS.flat());
 const MAX_EP1_PER_STAGE = 2;
-const REACTION_DELAY_MS = 1650;
 const NICO_REACTION_SOUNDS: AudioSourceKey[] = ['nicoPretty', 'nicoThatIsMySpot', 'nicoStopWait'];
 const NICO_INTRO_LINES = [
   'Explosions are clean. Demolition is honest.',
@@ -102,6 +101,8 @@ export function useNicoBehavior() {
   const secondPowerRef                    = useRef<SecondNicoPower>(Math.random() < 0.5 ? 'clearRow' : 'clearColumn');
   const lastCornerIdRef                   = useRef<number | null>(null);
   const reactionReadyAtRef                = useRef(0);
+  const cornerHitCountRef                 = useRef(0);
+  const introShownRef                     = useRef(false);
   const thoughtTimerRef                   = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cpuDelayTimerRef                  = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -139,6 +140,7 @@ export function useNicoBehavior() {
   const resetNicoRound = useCallback(() => {
     setThoughtText(null);
     setForcePower(null);
+    cornerHitCountRef.current = 0;
     reactionReadyAtRef.current = 0;
     if (thoughtTimerRef.current) { clearTimeout(thoughtTimerRef.current); thoughtTimerRef.current = null; }
     if (cpuDelayTimerRef.current) { clearTimeout(cpuDelayTimerRef.current); cpuDelayTimerRef.current = null; }
@@ -148,6 +150,7 @@ export function useNicoBehavior() {
     resetNicoRound();
     ep1UsedRef.current = 0;
     fourSquareUsedRef.current = false;
+    introShownRef.current = false;
     secondPowerRef.current = Math.random() < 0.5 ? 'clearRow' : 'clearColumn';
     lastCornerIdRef.current = null;
   }, [resetNicoRound]);
@@ -157,22 +160,50 @@ export function useNicoBehavior() {
     if (playerMoveIndex === null) return;
     if (!FOUR_SQUARE_INDICES.has(playerMoveIndex)) return;
 
+    cornerHitCountRef.current += 1;
+    const hitCount = cornerHitCountRef.current;
+
     const cornerId = getCornerId(playerMoveIndex);
-    const repeatedCorner = cornerId >= 0 && cornerId === lastCornerIdRef.current;
     lastCornerIdRef.current = cornerId >= 0 ? cornerId : lastCornerIdRef.current;
 
-    const lines = personality.lines.onPlayerSquare ?? personality.lines.nervous;
-    const line = lines.length > 0 ? getRandomLine(lines) : 'That is my spot.';
-    showLine(`${line} What should I do...`);
-    playNicoReactionSound();
-    reactionReadyAtRef.current = Date.now() + REACTION_DELAY_MS;
+    // Give CPU enough time to wait until reaction plays before firing
+    reactionReadyAtRef.current = Date.now() + 1800;
+
+    // Sound + text fires after ~1s so player sees their move first
+    setTimeout(() => {
+      playNicoReactionSound();
+      if (hitCount === 1 && !introShownRef.current) {
+        introShownRef.current = true;
+        showLine("Hey. Those corners are mine. Just a heads up.");
+      } else if (hitCount === 2) {
+        showLine("😤 Back in my corners again... 💣 Keep going.");
+      } else if (hitCount === 3) {
+        showLine("💥 Alright. You asked for it. 😡💣");
+      } else {
+        showLine("😡 You never learn. 💥💥");
+      }
+    }, 1000);
 
     if (ep1UsedRef.current >= MAX_EP1_PER_STAGE) return;
 
-    const bestFourSquare = getBestFourSquareCorner(board, 'player1');
-    const shouldFourSquare = !fourSquareUsedRef.current && bestFourSquare && (repeatedCorner || bestFourSquare.filter((index) => board[index]?.player === 'player1').length >= 2);
-    setForcePower(shouldFourSquare ? 'fourSquare' : secondPowerRef.current);
-  }, [getCornerId, personality, playNicoReactionSound, showLine]);
+    const bestCorner = getBestFourSquareCorner(board, 'player1');
+    const p1Count = bestCorner
+      ? bestCorner.filter(i => board[i]?.player === 'player1').length
+      : 0;
+
+    if (hitCount >= 3) {
+      // Fully committed — use 4 Square if anything to clear, fall back to row/col
+      if (!fourSquareUsedRef.current && bestCorner && p1Count >= 1) {
+        setForcePower('fourSquare');
+      } else {
+        setForcePower(secondPowerRef.current);
+      }
+    } else if (hitCount === 2 && !fourSquareUsedRef.current && bestCorner && p1Count >= 2) {
+      // Corner is already loaded — fire earlier
+      setForcePower('fourSquare');
+    }
+    // Hit 1: pure taunt, no power queued
+  }, [getCornerId, playNicoReactionSound, showLine]);
 
   // Called when player blocks Nico's epic — flavor only
   const triggerBlockedEpicResponse = useCallback(() => {
@@ -208,7 +239,7 @@ export function useNicoBehavior() {
           showEp1Launch(
             createGameBoardEffectEvent('fourSquare', 'Four Square', result.affectedIndices, ctx.board),
             true,
-            'Nico used Four Square emoji power',
+            'Nico used Four Square',
           );
           ctx.finishTurn(result.nextBoard, CPU_PLACE_FINISH_DELAY_MS);
           return;
@@ -224,7 +255,7 @@ export function useNicoBehavior() {
           showEp1Launch(
             createGameBoardEffectEvent('clearRow', 'Clear Row', result.affectedIndices, ctx.board),
             true,
-            'Nico used Clear Row emoji power',
+            'Nico used Clear Row',
           );
           ctx.finishTurn(result.nextBoard, CPU_PLACE_FINISH_DELAY_MS);
           return;
@@ -239,7 +270,7 @@ export function useNicoBehavior() {
           showEp1Launch(
             createGameBoardEffectEvent('clearColumn', 'Clear Column', result.affectedIndices, ctx.board),
             true,
-            'Nico used Clear Column emoji power',
+            'Nico used Clear Column',
           );
           ctx.finishTurn(result.nextBoard, CPU_PLACE_FINISH_DELAY_MS);
           return;

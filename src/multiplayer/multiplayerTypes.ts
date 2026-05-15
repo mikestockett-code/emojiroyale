@@ -1,4 +1,6 @@
 import type { BattlePowerSlotId, BattlePowerSlotLoadout, BoardCell, Player, StickerId } from '../types';
+import type { AudioSourceKey } from '../lib/audio';
+import type { GameBoardEffectEvent } from '../lib/gameBoardEffects';
 
 export type MultiplayerRole = 'host' | 'guest';
 export type MultiplayerPhase = 'lobby' | 'playing' | 'done';
@@ -11,6 +13,11 @@ export type SerializedRollsRemaining = {
   player2: number;
 };
 
+export type SerializedPowerUses = {
+  host: Record<BattlePowerSlotId, number>;
+  guest: Record<BattlePowerSlotId, number>;
+};
+
 export type SerializedGameState = {
   board: BoardCell[];
   playerRacks: Record<Player, StickerId[]>;
@@ -20,8 +27,11 @@ export type SerializedGameState = {
     host: SerializedPowerSlots;
     guest: SerializedPowerSlots;
   };
+  powerUses: SerializedPowerUses;
   selectedPowerSlotId: BattlePowerSlotId | null;
   lastMoveType: 'place' | 'roll' | 'power' | null;
+  lastSoundKey: AudioSourceKey | null;
+  lastEffectEvent: GameBoardEffectEvent | null;
   winnerPlayer: Player | null;
   winnerTitle: string | null;
   winnerType: 'common' | 'epic' | 'legendary' | null;
@@ -45,6 +55,7 @@ export type GuestMove =
       kind: 'pressSquare';
       boardIndex: number;
       selectedRackIndex: number | null;
+      selectedPowerSlotId?: BattlePowerSlotId | null;
       createdAt: number;
     }
   | {

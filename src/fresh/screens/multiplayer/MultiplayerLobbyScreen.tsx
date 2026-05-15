@@ -8,6 +8,7 @@ import type { BattlePowerSlotLoadout } from '../../../types';
 import type { FreshProfile } from '../../profile/types';
 import type { MultiplayerRoomController } from '../../../multiplayer/useMultiplayerRoom';
 import { normalizeRoomCode } from '../../../multiplayer/roomService';
+import { createInitialOnlineGameState } from '../../../multiplayer/onlineGameHelpers';
 import { onlineTheme } from '../../multiplayer/onlineTheme';
 import { styles } from './MultiplayerLobbyScreen.styles';
 import BG from '../../../../assets/backgrounds/backgroundgamearea.png';
@@ -119,6 +120,12 @@ export default function MultiplayerLobbyScreen({ mpRoom, activeProfile, onBackTo
       Alert.alert('Waiting for Powers', 'Both players need to pick powers before starting.');
       return;
     }
+    await mpRoom.writeGameState(createInitialOnlineGameState({
+      hostPowers: mpRoom.roomData.hostPowers,
+      guestPowers: mpRoom.roomData.guestPowers,
+      hostName: mpRoom.roomData.hostName,
+      guestName: mpRoom.roomData.guestName ?? 'Guest',
+    }));
     await mpRoom.advancePhase('playing');
   };
 

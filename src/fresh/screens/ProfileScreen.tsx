@@ -11,6 +11,7 @@ import { ProfileListCard } from './profile/ProfileListCard';
 import { profileStyles as styles } from './profile/profileStyles';
 import type { ProfileScreenProps } from './profile/profileScreen.types';
 import { Confetti } from '../shared/GameResultOverlay/Confetti';
+import { useAudioContext } from '../audio/AudioContext';
 
 export default function ProfileScreen({
   onBackToMenu,
@@ -22,6 +23,7 @@ export default function ProfileScreen({
   onSetSecondaryProfile,
   onDeleteProfile,
 }: ProfileScreenProps) {
+  const { playSound } = useAudioContext();
   const [draftName, setDraftName] = useState('');
   const [draftAvatar, setDraftAvatar] = useState(FRESH_PROFILE_AVATARS[0]);
   const [draftColor, setDraftColor] = useState<'sunset' | 'ocean' | 'mint' | 'violet' | 'ember' | 'slate'>('sunset');
@@ -104,7 +106,13 @@ export default function ProfileScreen({
           onSetSecondaryProfile={onSetSecondaryProfile}
           onDeleteProfile={onDeleteProfile}
         />
-        <Pressable onPress={onBackToMenu} style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
+        <Pressable
+          onPress={() => {
+            playSound('button');
+            onBackToMenu();
+          }}
+          style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
+        >
           <Text style={styles.backButtonText}>Back</Text>
         </Pressable>
       </ScrollView>
@@ -130,7 +138,10 @@ export default function ProfileScreen({
             ))}
           </ScrollView>
           <Pressable
-            onPress={() => setNewProfileName(null)}
+            onPress={() => {
+              playSound('button');
+              setNewProfileName(null);
+            }}
             style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed, { marginTop: 14 }]}
           >
             <Text style={styles.primaryButtonText}>LET'S GO! 🎉</Text>

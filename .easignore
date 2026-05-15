@@ -1,0 +1,27 @@
+# dependencies / generated output
+node_modules/
+dist/
+web-build/
+.expo/
+
+# local reports and notes
+reports/
+memory/
+
+# native/generated folders
+ios/
+android/
+
+# OS/editor noise
+.DS_Store
+**/.DS_Store
+*.tsbuildinfo
+
+# secrets / local env
+.env*.local
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.pem

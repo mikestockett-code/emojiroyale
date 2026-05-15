@@ -39,7 +39,7 @@ export default function BattleJourneyScreen({ onBackToMenu, onProceedToSetup, ac
     dismissIntro,
     startStageOne,
     restartStageOne,
-  } = useBattleJourneyState();
+  } = useBattleJourneyState(activeProfile?.id ?? null);
 
   const currentCpuId: BattleJourneyCpuId = save?.cpuId ?? 'todd';
   const stageLabel = `${currentCpuId === 'todd' ? 'Todd' : 'Nico'} - Stage ${save?.stageNumber ?? 1}`;

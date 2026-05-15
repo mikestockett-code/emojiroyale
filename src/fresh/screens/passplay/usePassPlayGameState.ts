@@ -14,7 +14,7 @@ import type { FreshPassPlaySetup } from '../../passplay/passPlaySetup.types';
 import { useAudioContext } from '../../audio/AudioContext';
 import { getWinSound } from '../../../lib/audio';
 import { buildRoundRewardPreviews, grantRoundRewardPreviews } from '../../../lib/sharedRoundRewards';
-import type { TurnEndMeta } from '../../../hooks/useGameBoard';
+import type { TurnEndMeta } from '../../../hooks/useModeBoardController';
 import type { AlbumPuzzleId, AlbumPuzzlePieceCounts } from '../../album/album.types';
 import { setGoldenPhoenixHolderName } from '../../../hooks/useGoldenPhoenixHolder';
 import { getAlbumStickerLabel } from '../../album/albumStickerLookup';

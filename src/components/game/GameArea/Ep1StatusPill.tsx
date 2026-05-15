@@ -7,12 +7,20 @@ type Props = {
   onClear?: () => void;
 };
 
+function getEyebrow(label: string): string {
+  if (label.startsWith('Nico used')) return 'NICO';
+  if (label.startsWith('Todd used')) return 'TODD';
+  if (label.startsWith('CPU used')) return 'CPU';
+  if (label.toLowerCase().includes('refill')) return 'POWER REFILL';
+  return 'RANDOM POWER+';
+}
+
 export function Ep1StatusPill({ visible, effectLabel, onClear }: Props) {
   if (!visible) return null;
 
   return (
     <Pressable onPress={onClear} style={styles.root}>
-      <Text style={styles.eyebrow}>RANDOM POWER+</Text>
+      <Text style={styles.eyebrow}>{getEyebrow(effectLabel)}</Text>
       <Text style={styles.label}>{effectLabel}</Text>
       <Text style={styles.hint}>tap to clear</Text>
     </Pressable>

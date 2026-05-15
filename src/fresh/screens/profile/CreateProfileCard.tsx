@@ -5,6 +5,7 @@ import {
   FRESH_PROFILE_COLORS,
 } from '../../profile/profileOptions';
 import type { FreshProfileColor } from '../../profile/types';
+import { useAudioContext } from '../../audio/AudioContext';
 import { profileStyles as styles } from './profileStyles';
 
 type Props = {
@@ -30,6 +31,8 @@ export function CreateProfileCard({
   onSelectColor,
   onCreate,
 }: Props) {
+  const { playSound } = useAudioContext();
+
   return (
     <View style={styles.card}>
       <Text style={styles.cardEyebrow}>CREATE PROFILE</Text>
@@ -50,7 +53,10 @@ export function CreateProfileCard({
         {FRESH_PROFILE_AVATARS.map((avatar) => (
           <Pressable
             key={avatar}
-            onPress={() => onSelectAvatar(avatar)}
+            onPress={() => {
+              playSound('button');
+              onSelectAvatar(avatar);
+            }}
             style={({ pressed }) => [
               styles.avatarOption,
               draftAvatar === avatar && styles.avatarOptionSelected,
@@ -72,7 +78,10 @@ export function CreateProfileCard({
           return (
             <Pressable
               key={colorKey}
-              onPress={() => onSelectColor(colorKey)}
+              onPress={() => {
+                playSound('button');
+                onSelectColor(colorKey);
+              }}
               style={({ pressed }) => [
                 styles.colorOption,
                 {
@@ -96,7 +105,11 @@ export function CreateProfileCard({
 
       {/* Create Button */}
       <Pressable
-        onPress={onCreate}
+        onPress={() => {
+          if (createDisabled) return;
+          playSound('button');
+          onCreate();
+        }}
         disabled={createDisabled}
         style={({ pressed }) => [
           styles.primaryButton,

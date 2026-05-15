@@ -164,7 +164,7 @@ export function useToddNervousMistake(cpuId: BattleCpuId) {
         showEp1Launch(
           createGameBoardEffectEvent('clearRow', 'Clear Row', clearResult.affectedIndices, ctx.board),
           true,
-          'Todd used Clear Row emoji power',
+          'Todd used Clear Row',
         );
         ctx.finishTurn(clearResult.nextBoard);
       } else {
@@ -201,7 +201,7 @@ export function useToddNervousMistake(cpuId: BattleCpuId) {
         showEp1Launch(
           createGameBoardEffectEvent('removeTile', 'Remove Tile', [target], ctx.board),
           true,
-          'Todd used Remove Tile emoji power',
+          'Todd used Remove Tile',
         );
         ctx.finishTurn(nextBoard);
         return true;
@@ -217,7 +217,7 @@ export function useToddNervousMistake(cpuId: BattleCpuId) {
         showEp1Launch(
           createGameBoardEffectEvent(ep1Result.effectId, ep1Result.effectLabel, ep1Result.affectedIndices, ctx.board),
           true,
-          `Todd used ${ep1Result.effectLabel} emoji power`,
+          `Todd used ${ep1Result.effectLabel}`,
         );
         ctx.finishTurn(ep1Result.nextBoard, CPU_ROLL_FINISH_DELAY_MS);
         return true;
@@ -267,7 +267,7 @@ export function useToddNervousMistake(cpuId: BattleCpuId) {
         showEp1Launch(
           createGameBoardEffectEvent('clearRow', 'Clear Row', clearResult.affectedIndices, ctx.board),
           true,
-          'Todd used Clear Row emoji power',
+          'Todd used Clear Row',
         );
         ctx.finishTurn(clearResult.nextBoard, CPU_PLACE_FINISH_DELAY_MS);
         return true;
